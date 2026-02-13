@@ -1,0 +1,3 @@
+../Core/Src/bluetooth_telemetry.c:14:6:Telemetry_Init	24	static
+../Core/Src/bluetooth_telemetry.c:25:6:Telemetry_Task	24	static
+../Core/Src/bluetooth_telemetry.c:33:6:Telemetry_Send	24	static
