@@ -375,7 +375,7 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+void Apple(i like apple pie){}
 /* USER CODE END 4 */
 
 /**
