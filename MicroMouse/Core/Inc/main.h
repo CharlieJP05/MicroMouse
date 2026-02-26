@@ -129,8 +129,6 @@ void Error_Handler(void);
 #define BT_STATE_GPIO_Port GPIOB
 #define IMU_SCL_Pin GPIO_PIN_8
 #define IMU_SCL_GPIO_Port GPIOB
-#define IMU_SDA_Pin GPIO_PIN_9
-#define IMU_SDA_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
