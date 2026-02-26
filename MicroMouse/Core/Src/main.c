@@ -129,6 +129,15 @@ int main(void)
   {
 	  while(i2c_sample_complete==0){}; 		// wait for DMA dta received from I2C
 	  i2c_sample_complete=0;				// reset flag for next update
+	  temp = ((int16_t)i2c_buffer_pointer[1]<<8) | ((int16_t)i2c_buffer_pointer[0]);	// Angular vel X
+	  angular_vel[0] = ((float)temp) * 0.00875f;	// convert to dps
+
+	  temp = ((int16_t)i2c_buffer_pointer[3]<<8) | ((int16_t)i2c_buffer_pointer[2]);	// Angular vel Y
+	  angular_vel[1] = ((float)temp) * 0.00875f;	// convert to dps
+
+	  temp = ((int16_t)i2c_buffer_pointer[5]<<8) | ((int16_t)i2c_buffer_pointer[4]);	// Angular vel Z
+	  angular_vel[2] = ((float)temp) * 0.00875f;	// convert to dps
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
