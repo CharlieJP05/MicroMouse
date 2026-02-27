@@ -1,0 +1,186 @@
+MicroMouse - Maze-Solving Algorithms
+======================================
+
+This document describes the algorithms used to navigate and solve the
+16x16 Micromouse competition maze.
+
+========================================================================
+1. MAZE REPRESENTATION
+========================================================================
+
+The maze is a 16x16 grid of cells numbered (0,0) at the start corner
+to (15,15) at the far corner. The goal is the 2x2 area at the centre:
+cells (7,7), (7,8), (8,7), (8,8).
+
+Wall storage (per cell, 1 byte):
+  Bit 0 (0x01): North wall present
+  Bit 1 (0x02): East  wall present
+  Bit 2 (0x04): South wall present
+  Bit 3 (0x08): West  wall present
+
+  uint8_t walls[16][16];  // walls[column][row], (0,0) = start
+
+Initialisation: the outer border walls are set; all interior walls are
+unknown. As the robot explores, it sets wall bits when a wall is detected
+and clears them only when a cell is visited and no wall is observed
+(sensors confirmed open passage).
+
+Robot heading is tracked as an integer:
+  0 = North (increasing row, +Y)
+  1 = East  (increasing column, +X)
+  2 = South (decreasing row, -Y)
+  3 = West  (decreasing column, -X)
+
+========================================================================
+2. FLOOD-FILL ALGORITHM
+========================================================================
+
+Flood-fill assigns a distance value to every cell representing the
+shortest known path length to the goal. The robot always moves to the
+neighbour with the lowest flood value.
+
+2.1 Basic Flood-Fill (BFS from goal)
+--------------------------------------
+  void floodfill(uint8_t goal_x, uint8_t goal_y)
+  {
+      uint8_t dist[16][16];
+      memset(dist, 255, sizeof(dist));
+      dist[goal_x][goal_y] = 0;
+
+      // Simple queue (circular buffer)
+      uint8_t q[256][2];
+      uint8_t head = 0, tail = 0;
+      q[tail][0] = goal_x; q[tail][1] = goal_y; tail++;
+
+      while (head != tail) {
+          uint8_t x = q[head][0], y = q[head][1]; head++;
+          uint8_t d = dist[x][y];
+
+          // North neighbour: (x, y+1) accessible if no North wall
+          if (y < 15 && !(walls[x][y] & 0x01) && dist[x][y+1] == 255) {
+              dist[x][y+1] = d + 1;
+              q[tail][0] = x; q[tail][1] = y+1; tail++;
+          }
+          // East neighbour: (x+1, y)
+          if (x < 15 && !(walls[x][y] & 0x02) && dist[x+1][y] == 255) {
+              dist[x+1][y] = d + 1;
+              q[tail][0] = x+1; q[tail][1] = y; tail++;
+          }
+          // South neighbour: (x, y-1)
+          if (y > 0 && !(walls[x][y] & 0x04) && dist[x][y-1] == 255) {
+              dist[x][y-1] = d + 1;
+              q[tail][0] = x; q[tail][1] = y-1; tail++;
+          }
+          // West neighbour: (x-1, y)
+          if (x > 0 && !(walls[x][y] & 0x08) && dist[x-1][y] == 255) {
+              dist[x-1][y] = d + 1;
+              q[tail][0] = x-1; q[tail][1] = y; tail++;
+          }
+      }
+      // Copy dist into global flood array
+      memcpy(flood_dist, dist, sizeof(dist));
+  }
+
+2.2 When to Re-run Flood-Fill
+------------------------------
+Re-run flood-fill every time a new wall is discovered that was not
+previously in the map. If the newly discovered wall blocks the current
+planned route, the robot must recalculate before proceeding.
+
+A lightweight check: before each move, compare the flood value of the
+chosen next cell with the current flood value - 1. If they don't match
+(because walls were updated since the last fill), re-run the fill.
+
+2.3 Choosing the Next Move Direction
+--------------------------------------
+  uint8_t choose_next_dir(uint8_t x, uint8_t y, uint8_t heading)
+  {
+      uint8_t best_dir = 0xFF;
+      uint8_t best_dist = 255;
+      uint8_t nx, ny;
+
+      // Check each of the four directions
+      for (uint8_t dir = 0; dir < 4; dir++) {
+          if (walls[x][y] & (1 << dir)) continue; // wall present
+
+          // Neighbour coordinates for this direction
+          nx = x + (dir==1) - (dir==3);
+          ny = y + (dir==0) - (dir==2);
+          if (nx > 15 || ny > 15) continue; // out of bounds
+
+          if (flood_dist[nx][ny] < best_dist) {
+              best_dist = flood_dist[nx][ny];
+              best_dir = dir;
+          }
+      }
+      return best_dir; // 0=N, 1=E, 2=S, 3=W
+  }
+
+Turning: if best_dir != heading, turn before moving forward.
+  turn_steps = (best_dir - heading + 4) % 4;
+    0 = no turn
+    1 = turn right 90
+    2 = turn 180
+    3 = turn left 90
+
+========================================================================
+3. EXPLORATION STRATEGY
+========================================================================
+
+The simplest strategy is "left-hand rule" for initial exploration, but
+flood-fill outperforms this significantly.
+
+Recommended strategy:
+  1. Always follow the flood-fill gradient (lowest neighbour distance).
+  2. Prefer unvisited cells when multiple neighbours have the same
+     flood distance (encourages exploration of unknown areas).
+  3. Mark cells as "visited" once entered.
+  4. Stop exploring when every cell reachable from the start has been
+     visited, or when a complete path to the goal is confirmed.
+
+Unvisited cell preference:
+  - Maintain a visited[16][16] flag array.
+  - When two cells have the same flood distance, choose the unvisited one.
+
+Return to start:
+  After reaching the goal, re-run flood-fill with the start cell as the
+  goal to navigate back. On the return trip, continue mapping walls.
+
+========================================================================
+4. SPEED RUN (AFTER EXPLORATION)
+========================================================================
+
+Once the maze is fully mapped:
+  1. Run flood-fill from the start to find the optimal path.
+  2. Convert the sequence of flood-fill moves to a list of straight
+     segments and turns (e.g., "straight 3 cells, right turn, straight 2").
+  3. Execute each segment at maximum speed using the motion controller,
+     braking and turning at cell boundaries.
+
+Diagonal moves (advanced):
+  If the competition rules allow, diagonal moves through open 2x2 corners
+  can shorten the path by up to 30%. This requires:
+  - A modified flood-fill that includes diagonal neighbours.
+  - Motion controller capable of 45-degree heading turns.
+
+Smooth curve turns (advanced):
+  Instead of stopping at each turn, pre-program the robot to begin
+  decelerating before the turn cell and execute a curved arc through
+  the corner while maintaining speed. This requires trajectory planning
+  and a more sophisticated motion controller.
+
+========================================================================
+5. SUMMARY OF ALGORITHM PERFORMANCE
+========================================================================
+
+Algorithm           Exploration        Speed Run    Complexity
+------------------  -----------------  -----------  ----------
+Left-hand rule      Always explores    Follows rule  Low
+Right-hand rule     Always explores    Follows rule  Low
+Flood-fill (BFS)    Near-optimal       Optimal       Medium
+A* search           Can be faster      Optimal       Higher
+Flood-fill + diags  Near-optimal       ~30% shorter  High
+
+For a first implementation, Flood-fill without diagonals is the
+recommended starting point as it is well-understood, reliable,
+and sufficient to be competitive in most Micromouse events.

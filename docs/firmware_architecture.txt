@@ -1,0 +1,269 @@
+MicroMouse - Firmware Architecture
+====================================
+Platform: STM32F446RETx, STM32CubeIDE / HAL
+
+This document describes how to structure the firmware for the MicroMouse
+so that it is modular, testable, and easy to extend.
+
+========================================================================
+1. MODULE OVERVIEW
+========================================================================
+
+  main.c            System entry, peripheral init, scheduler start
+  |
+  +-- sensors.c/h   US sensor, IR sensors, IMU read functions
+  +-- motors.c/h    PWM generation, encoder reading, low-level drive
+  +-- pid.c/h       Generic PID controller structure and update function
+  +-- motion.c/h    Straight drive, turn, cell-level move commands
+  +-- maze.c/h      16x16 wall map, flood-fill, path planning
+  +-- ui.c/h        LED control, button debounce, Bluetooth printf
+  +-- scheduler.c/h Lightweight fixed-rate task scheduler (optional)
+
+Each module owns its own state variables and exposes only a small public
+API (init, update, get/set functions).
+
+========================================================================
+2. TIMING AND SCHEDULER
+========================================================================
+
+SysTick is configured at 1 ms (default HAL tick).
+
+Recommended task periods:
+  Task                       Period     Notes
+  -------------------------  ---------  --------------------------------
+  IMU_UpdateHeading          1 ms       Integrate gyro Z for heading
+  IR_ReadAll                 2 ms       All 4 IR sensors with ambient
+  PID_Update (both motors)   1 ms       Speed and position controllers
+  US_Trigger                 50 ms      ~20 Hz, avoid echo overlap
+  Maze_UpdateWalls           per cell   On entering each new maze cell
+  Bluetooth debug print      100 ms     Lightweight telemetry
+
+Simplest implementation: use a flag array incremented in SysTick ISR
+and check flags in the main while(1) loop.
+
+  Example in stm32f4xx_it.c:
+    void SysTick_Handler(void) {
+        HAL_IncTick();
+        tick_1ms_flag  = 1;
+        if (++tick_2ms  >= 2)  { tick_2ms  = 0; tick_2ms_flag  = 1; }
+        if (++tick_50ms >= 50) { tick_50ms = 0; tick_50ms_flag = 1; }
+    }
+
+  Example in main while(1):
+    if (tick_1ms_flag)  { tick_1ms_flag  = 0; IMU_UpdateHeading(0.001f);
+                                               PID_Update(); }
+    if (tick_2ms_flag)  { tick_2ms_flag  = 0; IR_ReadAll(); }
+    if (tick_50ms_flag) { tick_50ms_flag = 0; US_Trigger(); }
+
+========================================================================
+3. MOTOR MODULE  (motors.c/h)
+========================================================================
+
+3.1 Initialisation
+------------------
+  void Motors_Init(void)
+    - Start TIM12 PWM (Motor 1: PB14/PB15)
+    - Start TIM8  PWM (Motor 2: PC8/PC9)
+    - Start TIM2 encoder mode (Motor 1 encoder: PA0/PA1)
+    - Start TIM3 encoder mode (Motor 2 encoder: PA6/PA7)
+
+3.2 Setting Speed
+-----------------
+  void Motor1_Set(int16_t duty)  // duty: -1000 to +1000
+  void Motor2_Set(int16_t duty)  // positive = forward
+
+  Map duty to PWM compare registers of TIM12 / TIM8.
+  Use complementary channels for H-bridge direction:
+    duty > 0:  CH_A = duty, CH_B = 0     (forward)
+    duty < 0:  CH_A = 0,    CH_B = -duty (reverse)
+    duty = 0:  CH_A = 0,    CH_B = 0     (coast) or both HIGH (brake)
+
+3.3 Reading Encoders
+--------------------
+  int32_t Motor1_GetEncoder(void)   // reads TIM2->CNT, handles overflow
+  int32_t Motor2_GetEncoder(void)   // reads TIM3->CNT, handles overflow
+
+  Store the previous counter value; speed = (current - previous) / dt.
+
+========================================================================
+4. PID CONTROLLER  (pid.c/h)
+========================================================================
+
+  typedef struct {
+      float kp, ki, kd;
+      float setpoint;
+      float integral;
+      float prev_error;
+      float output_min, output_max;
+  } PID_t;
+
+  float PID_Update(PID_t *pid, float measurement, float dt)
+  {
+      float error    = pid->setpoint - measurement;
+      pid->integral += error * dt;
+      float derivative = (error - pid->prev_error) / dt;
+      pid->prev_error = error;
+      float output = pid->kp * error
+                   + pid->ki * pid->integral
+                   + pid->kd * derivative;
+      // Clamp output
+      if (output > pid->output_max) output = pid->output_max;
+      if (output < pid->output_min) output = pid->output_min;
+      return output;
+  }
+
+Instantiate one PID per motor (speed control) and optionally one for
+lateral wall-following (keeping equal distance to left and right walls).
+
+========================================================================
+5. MOTION MODULE  (motion.c/h)
+========================================================================
+
+Cell size: 180 mm.
+Encoder ticks per millimetre: calibrate by driving a known distance.
+
+5.1 Move Forward One Cell
+--------------------------
+  void Motion_MoveForward(void)
+  {
+      int32_t target_ticks = TICKS_PER_CELL;  // e.g. 360 ticks
+      int32_t start1 = Motor1_GetEncoder();
+      int32_t start2 = Motor2_GetEncoder();
+      pid_left.setpoint  = target_ticks;
+      pid_right.setpoint = target_ticks;
+
+      while (!motion_complete) {
+          int32_t enc1 = Motor1_GetEncoder() - start1;
+          int32_t enc2 = Motor2_GetEncoder() - start2;
+          // PID outputs feed motor duty cycle
+          Motor1_Set((int16_t)PID_Update(&pid_left,  enc1, 0.001f));
+          Motor2_Set((int16_t)PID_Update(&pid_right, enc2, 0.001f));
+          // Apply IMU heading correction: if heading drifts, reduce
+          // speed of the leading motor.
+          float heading_error = target_heading - heading_deg;
+          Motor1_Set(motor1_duty + (int16_t)(heading_error * KH));
+          Motor2_Set(motor2_duty - (int16_t)(heading_error * KH));
+          if (enc1 >= target_ticks && enc2 >= target_ticks)
+              motion_complete = 1;
+          HAL_Delay(1);
+      }
+      Motor_Stop();
+  }
+
+5.2 Turn 90 Degrees
+--------------------
+  void Motion_Turn(int8_t direction)  // +1 = right, -1 = left
+  {
+      float target_heading = heading_deg + (direction * 90.0f);
+      Motor1_Set(direction * TURN_SPEED);
+      Motor2_Set(-direction * TURN_SPEED);
+      while (fabsf(heading_deg - target_heading) > 1.0f) {
+          IMU_UpdateHeading(0.001f);
+          HAL_Delay(1);
+      }
+      Motor_Stop();
+      target_heading_stored = target_heading;  // update straight-line reference
+  }
+
+========================================================================
+6. MAZE MODULE  (maze.c/h)
+========================================================================
+
+6.1 Wall Map Storage
+---------------------
+  #define MAZE_SIZE 16
+  // Each byte: bit0=North wall, bit1=East wall, bit2=South wall, bit3=West wall
+  uint8_t maze_walls[MAZE_SIZE][MAZE_SIZE];
+
+  // Distance map for flood-fill
+  uint8_t flood_dist[MAZE_SIZE][MAZE_SIZE];
+
+6.2 Updating Walls from Sensor Readings
+-----------------------------------------
+  void Maze_UpdateWalls(uint8_t x, uint8_t y, uint8_t heading,
+                        bool wall_front, bool wall_left, bool wall_right)
+  {
+      // Translate robot-relative walls to absolute North/East/South/West
+      // based on current heading (0=N, 1=E, 2=S, 3=W) and set bits
+      // in maze_walls[x][y] and the neighbour cell (shared walls).
+  }
+
+6.3 Flood-Fill Algorithm
+-------------------------
+  void Maze_FloodFill(uint8_t goal_x, uint8_t goal_y)
+  {
+      // Initialise all cells to 255 (unreachable)
+      memset(flood_dist, 0xFF, sizeof(flood_dist));
+      flood_dist[goal_x][goal_y] = 0;
+
+      // BFS queue
+      uint8_t queue[MAZE_SIZE * MAZE_SIZE][2];
+      int head = 0, tail = 0;
+      queue[tail][0] = goal_x; queue[tail][1] = goal_y; tail++;
+
+      while (head != tail) {
+          uint8_t cx = queue[head][0], cy = queue[head][1]; head++;
+          uint8_t dist = flood_dist[cx][cy];
+
+          // Try all four neighbours; only cross if no wall between them
+          // For each reachable neighbour with dist 0xFF, set dist+1 and enqueue
+      }
+  }
+
+6.4 Choosing the Next Move
+---------------------------
+  After flood-fill, the robot looks at all open neighbours of its current
+  cell and moves to whichever has the lowest flood_dist value.
+  Ties can be broken by preferring straight ahead over turning.
+
+========================================================================
+7. BLUETOOTH DEBUG  (ui.c/h)
+========================================================================
+
+  void BT_Printf(const char *fmt, ...)
+  {
+      char buf[128];
+      va_list args;
+      va_start(args, fmt);
+      vsnprintf(buf, sizeof(buf), fmt, args);
+      va_end(args);
+      HAL_UART_Transmit(&huart4, (uint8_t*)buf, strlen(buf), 100);
+  }
+
+Use the HC-05 module on UART4 (PC10/PC11) to stream live sensor values
+and maze state to a laptop running a terminal (e.g. PuTTY / CoolTerm).
+The BT_MODE pin (PA8) can be driven HIGH before UART4 init to enter
+AT-command mode for configuring baud rate and device name.
+
+========================================================================
+8. STARTUP SEQUENCE
+========================================================================
+
+  1. HAL_Init() / SystemClock_Config() / MX_GPIO/ADC/UART/TIM/I2C Init
+  2. IMU_Init() + IMU_CalibrateGyro()  (robot must be stationary)
+  3. IR_ReadAll() to verify sensors working; flash LED1/LED2 pattern
+  4. Wait for SWITCH1 press to begin maze run
+  5. Enter main control loop:
+       a. Read sensors (IR, US, IMU)
+       b. Update PID and motion controller
+       c. Check if new maze cell entered; update wall map
+       d. Run flood-fill if new walls discovered
+       e. Choose next move direction
+       f. Send Bluetooth telemetry
+  6. On reaching goal, stop and flash LEDs to signal success
+  7. Wait for SWITCH2 press to start speed run using known map
+
+========================================================================
+9. RECOMMENDED DEVELOPMENT ORDER
+========================================================================
+
+  Step 1  Get printf working over USART2 (ST-Link VCP)
+  Step 2  Blink LEDs and read buttons
+  Step 3  Drive motors open-loop, verify encoder counts
+  Step 4  Implement and tune motor speed PID
+  Step 5  Implement IMU read and heading integration
+  Step 6  Implement IR sensor reads, verify wall detection
+  Step 7  Implement US sensor trigger and echo measurement
+  Step 8  Implement cell-level motion (forward + turn)
+  Step 9  Implement maze wall map and flood-fill
+  Step 10 Integrate everything and run the full maze
