@@ -30,9 +30,14 @@ void Telemetry_Task(void)
     HAL_UART_Transmit(hbt_uart, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
 }
 
-void Telemetry_Send(const char *msg)
+void bt_send(const char *msg)
 {
     if (!telemetry_enabled) return;
 
     HAL_UART_Transmit(hbt_uart, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
+}
+
+void Telemetry_Send(const char *msg)
+{
+    bt_send(msg);
 }

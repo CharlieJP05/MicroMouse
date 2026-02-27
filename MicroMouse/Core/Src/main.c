@@ -1,5 +1,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "bluetooth_telemetry.h"
 #include <stdio.h>
 
 /* Private variables ---------------------------------------------------------*/
@@ -30,6 +31,9 @@ int main(void)
     // Set BTMODE low by default (Data Mode)
     HAL_GPIO_WritePin(BTMODE_GPIO_Port, BTMODE_Pin, GPIO_PIN_RESET);
 
+    // Initialise Bluetooth telemetry on UART4 (HC-05)
+    Telemetry_Init(&huart4);
+
     while (1)
     {
         // Toggle LED
@@ -46,8 +50,8 @@ int main(void)
                            btstate,
                            btmode);
 
-        // Send to HC-05
-        HAL_UART_Transmit(&huart4, (uint8_t*)msg, len, HAL_MAX_DELAY);
+        // Send to HC-05 via bt_send
+        bt_send(msg);
 
         // Send to PC
         HAL_UART_Transmit(&huart2, (uint8_t*)msg, len, HAL_MAX_DELAY);
