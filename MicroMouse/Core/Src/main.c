@@ -139,6 +139,11 @@ int main(void)
       adc_value = 0xFFFFFFFFU;
     }
     HAL_ADC_Stop(&hadc1);
+
+    /* 1 ms loop period – prevents Encoder_Update() being called at full
+     * CPU speed, which would cause even tiny noise counts to accumulate
+     * into an int32_t overflow in a matter of seconds. */
+    HAL_Delay(1);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -314,7 +319,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pins : M1ENC_A_Pin M1ENC_B_Pin */
   GPIO_InitStruct.Pin = M1ENC_A_Pin|M1ENC_B_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -329,7 +334,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pins : M2ENC_A_Pin M2ENC_B_Pin */
   GPIO_InitStruct.Pin = M2ENC_A_Pin|M2ENC_B_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   GPIO_InitStruct.Alternate = GPIO_AF2_TIM3;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -441,11 +446,11 @@ static void MX_TIM2_Init(void)
   sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
   sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC1Filter = 0;
+  sConfig.IC1Filter = 4;
   sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
   sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC2Filter = 0;
+  sConfig.IC2Filter = 4;
 
   if (HAL_TIM_Encoder_Init(&htim2, &sConfig) != HAL_OK)
   {
@@ -485,11 +490,11 @@ static void MX_TIM3_Init(void)
   sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
   sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC1Filter = 0;
+  sConfig.IC1Filter = 4;
   sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
   sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC2Filter = 0;
+  sConfig.IC2Filter = 4;
 
   if (HAL_TIM_Encoder_Init(&htim3, &sConfig) != HAL_OK)
   {
