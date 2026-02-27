@@ -50,6 +50,13 @@ UART_HandleTypeDef huart2;
 /* USER CODE BEGIN PV */
 Encoder_t encoder1;  /* Motor 1 encoder (TIM2, pins configured externally) */
 Encoder_t encoder2;  /* Motor 2 encoder (TIM3, pins configured externally) */
+
+/* Live Expression variables – add these names in the STM32CubeIDE
+ * Live Expressions view (Window > Show View > Live Expressions) to
+ * watch their values update in real-time while the MCU is running. */
+volatile int32_t  enc1_count = 0;  /* Motor 1 accumulated tick count    */
+volatile int32_t  enc2_count = 0;  /* Motor 2 accumulated tick count    */
+volatile uint32_t adc_value  = 0;  /* Latest ADC1 raw reading (12-bit)  */
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -115,6 +122,23 @@ int main(void)
      * add an appropriate loop delay to control the sampling rate. */
     Encoder_Update(&encoder1);
     Encoder_Update(&encoder2);
+
+    /* Refresh Live Expression variables so STM32CubeIDE can display
+     * their current values without halting the MCU. */
+    enc1_count = Encoder_GetCount(&encoder1);
+    enc2_count = Encoder_GetCount(&encoder2);
+
+    HAL_ADC_Start(&hadc1);
+    if (HAL_ADC_PollForConversion(&hadc1, 1) == HAL_OK)
+    {
+      adc_value = HAL_ADC_GetValue(&hadc1);
+    }
+    else
+    {
+      /* Sentinel – visible in Live Expressions when conversion fails */
+      adc_value = 0xFFFFFFFFU;
+    }
+    HAL_ADC_Stop(&hadc1);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
