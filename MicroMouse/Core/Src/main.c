@@ -21,7 +21,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <string.h>
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -102,7 +103,8 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
+	  IR_Handler();
+	  HAL_Delay(100);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -375,7 +377,20 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void IR_Handler(void)
+{
+	uint32_t adc_value = 0;
+	char msg[50];
 
+	HAL_ADC_Start(&hadc1);                         // Start ADC
+	HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+	adc_value = HAL_ADC_GetValue(&hadc1);          // Read value
+	HAL_ADC_Stop(&hadc1);                          // Stop ADC
+
+	sprintf(msg, "ADC: %lu\r\n", adc_value);       // Convert to string
+	HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
+
+}
 /* USER CODE END 4 */
 
 /**
