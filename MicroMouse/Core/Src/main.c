@@ -69,7 +69,8 @@ static void MX_ADC1_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_TIM4_Init(void);
 /* USER CODE BEGIN PFP */
-void IMU_sensor(void);
+void IMU_sensor(angular_vel[3]);
+void IMU_initialise(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -112,32 +113,14 @@ int main(void)
   MX_I2C1_Init();
   MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
-  i2c_buffer[0] = 0b10000000;
-  // set gyroscope sample rate at 1.667 KHz and sensitivity to +/-250dps
-  if (HAL_I2C_Mem_Write(&hi2c1, LSM6DSO_ADDRESS, CTRL2_G, 1, i2c_buffer, 1, HAL_MAX_DELAY) !=HAL_OK)
-  	strcpy((char*)uart_tx_buffer, "Error Tx \n");		// report error through UART
-  else
-  	strcpy((char*)uart_tx_buffer, "Gyro sample rate set! \n");
-  HAL_UART_Transmit(&huart2, (uint8_t*)uart_tx_buffer, strlen((const char*)uart_tx_buffer), HAL_MAX_DELAY);
-
-  HAL_TIM_Base_Start_IT(&htim2);							//start timer to generate regular sampling from IMU
+  IMU_initialise();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  while(i2c_sample_complete==0){}; 		// wait for DMA dta received from I2C
-	  i2c_sample_complete=0;				// reset flag for next update
-	  temp = ((int16_t)i2c_buffer_pointer[1]<<8) | ((int16_t)i2c_buffer_pointer[0]);	// Angular vel X
-	  angular_vel[0] = ((float)temp) * 0.00875f;	// convert to dps
-
-	  temp = ((int16_t)i2c_buffer_pointer[3]<<8) | ((int16_t)i2c_buffer_pointer[2]);	// Angular vel Y
-	  angular_vel[1] = ((float)temp) * 0.00875f;	// convert to dps
-
-	  temp = ((int16_t)i2c_buffer_pointer[5]<<8) | ((int16_t)i2c_buffer_pointer[4]);	// Angular vel Z
-	  angular_vel[2] = ((float)temp) * 0.00875f;	// convert to dps
-
+	  IMU_sensor();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -499,7 +482,31 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-void IMU_sensor(void){
+void IMU_initialise(void){
+	  i2c_buffer[0] = 0b10000000;
+	  // set gyroscope sample rate at 1.667 KHz and sensitivity to +/-250dps
+	  if (HAL_I2C_Mem_Write(&hi2c1, LSM6DSO_ADDRESS, CTRL2_G, 1, i2c_buffer, 1, HAL_MAX_DELAY) !=HAL_OK)
+	  	strcpy((char*)uart_tx_buffer, "Error Tx \n");		// report error through UART
+	  else
+	  	strcpy((char*)uart_tx_buffer, "Gyro sample rate set! \n");
+	  HAL_UART_Transmit(&huart2, (uint8_t*)uart_tx_buffer, strlen((const char*)uart_tx_buffer), HAL_MAX_DELAY);
+
+	  HAL_TIM_Base_Start_IT(&htim4);							//start timer to generate regular sampling from IMU
+}
+void IMU_sensor(angular_vel[3]){
+	  while(i2c_sample_complete==0){}; 		// wait for DMA dta received from I2C
+	  i2c_sample_complete=0;// reset flag for next update
+
+	  int16_t temp; // placeholder variable
+
+	  temp = ((int16_t)i2c_buffer_pointer[1]<<8) | ((int16_t)i2c_buffer_pointer[0]);	// Angular vel X
+	  angular_vel[0] = ((float)temp) * 0.00875f;	// convert to dps
+
+	  temp = ((int16_t)i2c_buffer_pointer[3]<<8) | ((int16_t)i2c_buffer_pointer[2]);	// Angular vel Y
+	  angular_vel[1] = ((float)temp) * 0.00875f;	// convert to dps
+
+	  temp = ((int16_t)i2c_buffer_pointer[5]<<8) | ((int16_t)i2c_buffer_pointer[4]);	// Angular vel Z
+	  angular_vel[2] = ((float)temp) * 0.00875f;	// convert to dps
 
 }
 /* USER CODE END 4 */
