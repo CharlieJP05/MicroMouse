@@ -56,7 +56,7 @@ static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_ADC1_Init(void);
 /* USER CODE BEGIN PFP */
-
+void IR_Handler(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -393,21 +393,38 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void IR_Handler(void)
 {
-	uint32_t adc_values[0] = 0;
-	uint32_t adc_values[1] = 0;
-	uint32_t adc_values[2] = 0;
-	uint32_t adc_values[3] = 0;
-	char msg[50];
+	ADC_ChannelConfTypeDef sConfig = {0};
+	char msg[80];
 
-	HAL_ADC_Start(&hadc1);                         // Start ADC
-	HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-	adc_value = HAL_ADC_GetValue(&hadc1);          // Read value
-	HAL_ADC_Stop(&hadc1);                          // Stop ADC
+	/* ADC channels for each IR sensor:
+	 * IR1 -> PA4 -> ADC_CHANNEL_4
+	 * IR2 -> PB0 -> ADC_CHANNEL_8
+	 * IR3 -> PC0 -> ADC_CHANNEL_10
+	 * IR4 -> PC1 -> ADC_CHANNEL_11 */
+	uint32_t channels[4] = {ADC_CHANNEL_4, ADC_CHANNEL_8, ADC_CHANNEL_10, ADC_CHANNEL_11};
 
-	sprintf(msg, "ADC: %lu\r\n", adc_value);       // Convert to string
+	for (int i = 0; i < 4; i++)
+	{
+		sConfig.Channel = channels[i];
+		sConfig.Rank = 1;
+		sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;
+		if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+		{
+			Error_Handler();
+		}
+
+		HAL_ADC_Start(&hadc1);
+		if (HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY) != HAL_OK)
+		{
+			Error_Handler();
+		}
+		adc_values[i] = HAL_ADC_GetValue(&hadc1);
+		HAL_ADC_Stop(&hadc1);
+	}
+
+	sprintf(msg, "IR1:%lu IR2:%lu IR3:%lu IR4:%lu\r\n",
+			adc_values[0], adc_values[1], adc_values[2], adc_values[3]);
 	HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
-
-
 
 
 
