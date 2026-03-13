@@ -103,9 +103,10 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	  IR_Handler();
-	  HAL_Delay(100);
+
     /* USER CODE BEGIN 3 */
+	IR_Handler();
+	HAL_Delay(100);
   }
   /* USER CODE END 3 */
 }
@@ -283,12 +284,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : IR4_OUT_Pin BT_MODE_Pin LED4_Pin US_TRIG_Pin */
-  GPIO_InitStruct.Pin = IR4_OUT_Pin|BT_MODE_Pin|LED4_Pin|US_TRIG_Pin;
+  /*Configure GPIO pin : IR4_OUT_Pin */
+  GPIO_InitStruct.Pin = IR4_OUT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(IR4_OUT_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : M2ENC_A_Pin M2ENC_B_Pin */
   GPIO_InitStruct.Pin = M2ENC_A_Pin|M2ENC_B_Pin;
@@ -298,12 +299,17 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF2_TIM3;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LED1_Pin IR1_OUT_Pin IR2_OUT_Pin LED2_Pin
-                           LED3_Pin */
-  GPIO_InitStruct.Pin = LED1_Pin|IR1_OUT_Pin|IR2_OUT_Pin|LED2_Pin
-                          |LED3_Pin;
+  /*Configure GPIO pins : LED1_Pin LED2_Pin LED3_Pin */
+  GPIO_InitStruct.Pin = LED1_Pin|LED2_Pin|LED3_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : IR1_OUT_Pin IR2_OUT_Pin */
+  GPIO_InitStruct.Pin = IR1_OUT_Pin|IR2_OUT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
@@ -318,7 +324,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : IR3_OUT_Pin */
   GPIO_InitStruct.Pin = IR3_OUT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(IR3_OUT_GPIO_Port, &GPIO_InitStruct);
 
@@ -335,6 +341,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   GPIO_InitStruct.Alternate = GPIO_AF3_TIM8;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : BT_MODE_Pin LED4_Pin US_TRIG_Pin */
+  GPIO_InitStruct.Pin = BT_MODE_Pin|LED4_Pin|US_TRIG_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : SWITCH2_Pin */
   GPIO_InitStruct.Pin = SWITCH2_Pin;
