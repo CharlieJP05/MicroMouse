@@ -46,6 +46,7 @@ ADC_HandleTypeDef hadc1;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
+uint32_t adc_values[4];
 
 /* USER CODE END PV */
 
@@ -392,7 +393,10 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void IR_Handler(void)
 {
-	uint32_t adc_value = 0;
+	uint32_t adc_values[0] = 0;
+	uint32_t adc_values[1] = 0;
+	uint32_t adc_values[2] = 0;
+	uint32_t adc_values[3] = 0;
 	char msg[50];
 
 	HAL_ADC_Start(&hadc1);                         // Start ADC
@@ -402,6 +406,13 @@ void IR_Handler(void)
 
 	sprintf(msg, "ADC: %lu\r\n", adc_value);       // Convert to string
 	HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
+
+
+
+
+
+
+
 
 }
 /* USER CODE END 4 */
