@@ -60,8 +60,8 @@ all: main-build
 main-build: MicroMouse.elf secondary-outputs
 
 # Tool invocations
-MicroMouse.elf MicroMouse.map: $(OBJS) $(USER_OBJS) C:\Users\c38-parker\git\MicroMouse\MicroMouse\STM32F446RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "MicroMouse.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\c38-parker\git\MicroMouse\MicroMouse\STM32F446RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="MicroMouse.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+MicroMouse.elf MicroMouse.map: $(OBJS) $(USER_OBJS) C:\Users\jacob\git\MicroMouse\MicroMouse\STM32F446RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "MicroMouse.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\jacob\git\MicroMouse\MicroMouse\STM32F446RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="MicroMouse.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

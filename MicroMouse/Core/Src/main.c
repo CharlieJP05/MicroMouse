@@ -31,7 +31,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define SIZE_I2C_BUFFER 6
+#define SIZE_I2C_BUFFER 14
 #define SIZE_UART_TX_BUFFER 100
 /* USER CODE END PD */
 
@@ -53,11 +53,16 @@ UART_HandleTypeDef huart2;
 /* USER CODE BEGIN PV */
 static const uint8_t OUT_TEMP_L		= 0x20; 		// OUT_TEMP_L address
 static const uint8_t LSM6DSO_ADDRESS= 0x6A<< 1;		// shift 7-bit I2C address
-static const uint8_t CTRL2_G		= 0x11;			// control register
+static const uint8_t CTRL1_XL		= 0x10;			// control register 1
+static const uint8_t CTRL2_G		= 0x11;			// control register 2
+static const uint8_t OUTX_L_A		= 0x28;			// accelerometer X-axis output register low byte
 uint8_t i2c_buffer[SIZE_I2C_BUFFER];				// storage for data from I2C
 uint8_t uart_tx_buffer[SIZE_UART_TX_BUFFER];		// storage for UART tx data
-uint8_t i2c_sample_complete = 0;					// flag to be set in DMA interrupt callback
-float angular_vel[3];								// converted angular velocity results in milli-degrees per second
+float acceleration[3];								// converted results from accelerometer
+volatile uint8_t i2c_sample_complete = 0;					// flag to be set in DMA interrupt callback
+float temperature;									// converted temperature in degrees centigrade
+float angular_vel[3];								// converted angular velocity results in milli-degrees per secon
+float angle[3] = {0.0f, 0.0f, 0.0f};  // degrees, add to global variables
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -69,7 +74,7 @@ static void MX_ADC1_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_TIM4_Init(void);
 /* USER CODE BEGIN PFP */
-void IMU_sensor(angular_vel[3]);
+void IMU_sensor(uint8_t* i2c_buffer_pointer);
 void IMU_initialise(void);
 /* USER CODE END PFP */
 
@@ -120,7 +125,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  IMU_sensor();
+	  IMU_sensor(i2c_buffer);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -484,6 +489,11 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void IMU_initialise(void){
 	  i2c_buffer[0] = 0b10000000;
+	  if (HAL_I2C_Mem_Write(&hi2c1, LSM6DSO_ADDRESS, CTRL1_XL, 1, i2c_buffer, 1, HAL_MAX_DELAY) !=HAL_OK)
+	  	strcpy((char*)uart_tx_buffer, "Error Tx \n");		// report error through UART
+	  else
+	  	strcpy((char*)uart_tx_buffer, "Acc sample rate set! \n");
+	  HAL_UART_Transmit(&huart2, (uint8_t*)uart_tx_buffer, strlen((const char*)uart_tx_buffer), HAL_MAX_DELAY);
 	  // set gyroscope sample rate at 1.667 KHz and sensitivity to +/-250dps
 	  if (HAL_I2C_Mem_Write(&hi2c1, LSM6DSO_ADDRESS, CTRL2_G, 1, i2c_buffer, 1, HAL_MAX_DELAY) !=HAL_OK)
 	  	strcpy((char*)uart_tx_buffer, "Error Tx \n");		// report error through UART
@@ -493,22 +503,52 @@ void IMU_initialise(void){
 
 	  HAL_TIM_Base_Start_IT(&htim4);							//start timer to generate regular sampling from IMU
 }
-void IMU_sensor(angular_vel[3]){
+void IMU_sensor(uint8_t* i2c_buffer_pointer){
 	  while(i2c_sample_complete==0){}; 		// wait for DMA dta received from I2C
 	  i2c_sample_complete=0;// reset flag for next update
 
 	  int16_t temp; // placeholder variable
+		temp = ((int16_t)i2c_buffer_pointer[1]<<8) | ((int16_t)i2c_buffer_pointer[0]);	// temperature
+		temperature = ((float)temp) / 256.0f + 25;		// convert to degrees cent
 
-	  temp = ((int16_t)i2c_buffer_pointer[1]<<8) | ((int16_t)i2c_buffer_pointer[0]);	// Angular vel X
-	  angular_vel[0] = ((float)temp) * 0.00875f;	// convert to dps
+		temp = ((int16_t)i2c_buffer_pointer[3]<<8) | ((int16_t)i2c_buffer_pointer[2]);	// Angular vel X
+		angular_vel[0] = ((float)temp) * 0.00875f;	// convert to dps
 
-	  temp = ((int16_t)i2c_buffer_pointer[3]<<8) | ((int16_t)i2c_buffer_pointer[2]);	// Angular vel Y
-	  angular_vel[1] = ((float)temp) * 0.00875f;	// convert to dps
+		temp = ((int16_t)i2c_buffer_pointer[5]<<8) | ((int16_t)i2c_buffer_pointer[4]);	// Angular vel Y
+		angular_vel[1] = ((float)temp) * 0.00875f;	// convert to dps
 
-	  temp = ((int16_t)i2c_buffer_pointer[5]<<8) | ((int16_t)i2c_buffer_pointer[4]);	// Angular vel Z
-	  angular_vel[2] = ((float)temp) * 0.00875f;	// convert to dps
+		temp = ((int16_t)i2c_buffer_pointer[7]<<8) | ((int16_t)i2c_buffer_pointer[6]);	// Angular vel Z
+		angular_vel[2] = ((float)temp) * 0.00875f;	// convert to dps
+
+		temp = ((int16_t)i2c_buffer_pointer[9]<<8) | ((int16_t)i2c_buffer_pointer[8]);	//raw X acceleration
+		acceleration[0] = ((float)temp) * 0.061f;			//convert to mg (sensitivity taken from data sheet +/-2g range)
+
+		temp = ((int16_t)i2c_buffer_pointer[11]<<8) | ((int16_t)i2c_buffer_pointer[10]);	//raw Y acceleration
+		acceleration[1] = ((float)temp) * 0.061f;			//convert to mg (sensitivity taken from data sheet +/-2g range)
+
+		temp = ((int16_t)i2c_buffer_pointer[13]<<8) | ((int16_t)i2c_buffer_pointer[12]);	//raw Z acceleration
+		acceleration[2] = ((float)temp) * 0.061f;			//convert to mg (sensitivity taken from data sheet +/-2g range)
+
+		angle[0] += angular_vel[0] * 0.02f;  // 20ms = 0.02s
+		angle[1] += angular_vel[1] * 0.02f;
+		angle[2] += angular_vel[2] * 0.02f;
 
 }
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+
+	if(htim == &htim4)
+		{
+			// sample IMU (read 6 bytes startng from OUTX_L_A)
+		HAL_I2C_Mem_Read_DMA(&hi2c1, LSM6DSO_ADDRESS, OUT_TEMP_L, I2C_MEMADD_SIZE_8BIT, i2c_buffer, SIZE_I2C_BUFFER);
+		}
+}
+
+void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+	i2c_sample_complete = 1;	// set flag to indicate DMA transfer complete
+}
+
 /* USER CODE END 4 */
 
 /**
