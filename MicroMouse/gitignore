@@ -1,0 +1,64 @@
+
+# Build output
+/Debug/
+/Release/
+/build/
+/out/
+
+# Object, dependency and listing files
+*.o
+*.obj
+*.d
+*.su
+*.lst
+*.map
+*.bin
+*.hex
+*.elf
+*.axf
+
+# Linker and map outputs
+*.map
+
+# IDE and editor files
+.vscode/
+/.vs/
+*.launch
+*.suo
+*.user
+*.sdf
+*.cproject
+*.project
+.settings/
+
+# Keil / uVision
+*.uvproj*
+*.uvopt*
+
+# Code::Blocks and other project files
+*.cbp
+
+# Build system lists and generated makefiles
+objects.list
+sources.mk
+subdir.mk
+
+# Temporary and backup files
+*~
+*.swp
+*.tmp
+*.bak
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
+
+# Coverage and test artifacts
+coverage/
+
+# Misc
+.depend
+*.dep
+.dep.d
+
