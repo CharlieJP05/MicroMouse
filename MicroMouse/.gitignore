@@ -62,3 +62,8 @@ coverage/
 *.dep
 .dep.d
 
+.settings/
+.vscode/
+build/
+bin/
+obj/
