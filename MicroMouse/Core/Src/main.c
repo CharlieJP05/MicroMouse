@@ -579,27 +579,35 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 	if(htim == &htim2)
 	{
-		if(htim2.Instance->CNT < 24) // if CNT is less than half of ARR (48)
+		/* Compute timer period (wrap size) from ARR and its half-period */
+		uint32_t periodR = __HAL_TIM_GET_AUTORELOAD(&htim2) + 1U;
+		uint32_t halfPeriodR = periodR / 2U;
+
+		if(htim2.Instance->CNT < halfPeriodR) // if CNT is less than half of the period
 		{
 			rollover_counterR +=1;	// increment counter
 		}
-		if(htim2.Instance->CNT > 24) // if CNT is more than half of ARR (48)
+		if(htim2.Instance->CNT > halfPeriodR) // if CNT is more than half of the period
 		{
 			rollover_counterR -=1;	// decrement counter
 		}
-		positionR = htim2.Instance->CNT + (rollover_counterR * 48);	// absolute position calculated
+		positionR = (int32_t)htim2.Instance->CNT + (rollover_counterR * (int32_t)periodR);	// absolute position calculated
 	}
 	if(htim == &htim3)
 	{
-		if(htim3.Instance->CNT < 24) // if CNT is less than half of ARR (48)
+		/* Compute timer period (wrap size) from ARR and its half-period */
+		uint32_t periodL = __HAL_TIM_GET_AUTORELOAD(&htim3) + 1U;
+		uint32_t halfPeriodL = periodL / 2U;
+
+		if(htim3.Instance->CNT < halfPeriodL) // if CNT is less than half of the period
 		{
 			rollover_counterL +=1;	// increment counter
 		}
-		if(htim3.Instance->CNT > 24) // if CNT is more than half of ARR (48)
+		if(htim3.Instance->CNT > halfPeriodL) // if CNT is more than half of the period
 		{
 			rollover_counterL -=1;	// decrement counter
 		}
-		positionL = htim3.Instance->CNT + (rollover_counterL * 48);	// absolute position calculated
+		positionL = (int32_t)htim3.Instance->CNT + (rollover_counterL * (int32_t)periodL);	// absolute position calculated
 	}
 }
 float US_Read(void)
