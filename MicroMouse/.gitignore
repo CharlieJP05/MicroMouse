@@ -1,4 +1,8 @@
-
+.settings/
+.vscode/
+build/
+bin/
+obj/
 # Build output
 /Debug/
 /Release/
