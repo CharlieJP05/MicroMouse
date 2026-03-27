@@ -45,6 +45,7 @@ ADC_HandleTypeDef hadc1;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim6;
+TIM_HandleTypeDef htim7;
 
 UART_HandleTypeDef huart2;
 
@@ -65,6 +66,7 @@ static void MX_USART2_UART_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM3_Init(void);
+static void MX_TIM7_Init(void);
 static void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
 void IMU_sensor(void);
@@ -108,11 +110,13 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
+  MX_TIM7_Init();
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim6);	// start timer6 to generate interrupt
   HAL_TIM_Encoder_Start(&htim2,TIM_CHANNEL_ALL);	// start the Quadrature encoder (timer 2)
   HAL_TIM_Encoder_Start(&htim3,TIM_CHANNEL_ALL);	// start the Quadrature encoder (timer 3)
+  HAL_TIM_Base_Start(&htim7);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -366,6 +370,44 @@ static void MX_TIM6_Init(void)
 }
 
 /**
+  * @brief TIM7 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM7_Init(void)
+{
+
+  /* USER CODE BEGIN TIM7_Init 0 */
+
+  /* USER CODE END TIM7_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM7_Init 1 */
+
+  /* USER CODE END TIM7_Init 1 */
+  htim7.Instance = TIM7;
+  htim7.Init.Prescaler = 84-1;
+  htim7.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim7.Init.Period = 65535;
+  htim7.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim7) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim7, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM7_Init 2 */
+
+  /* USER CODE END TIM7_Init 2 */
+
+}
+
+/**
   * @brief USART2 Initialization Function
   * @param None
   * @retval None
@@ -557,29 +599,30 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		}
 		positionL = htim3.Instance->CNT + (rollover_counterL * 48);	// absolute position calculated
 	}
+}
 float US_Read(void)
 {
     uint32_t time = 0;
 
-    // 1️⃣ Send 10us trigger pulse
+    // 1�?⃣ Send 10us trigger pulse
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_SET);
-    __HAL_TIM_SET_COUNTER(&htim2, 0);
-    while(__HAL_TIM_GET_COUNTER(&htim2) < 10);   // 10µs
+    __HAL_TIM_SET_COUNTER(&htim7, 0);
+    while(__HAL_TIM_GET_COUNTER(&htim7) < 10);   // 10µs
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
 
-    // 2️⃣ Wait for echo to go HIGH
+    // 2�?⃣ Wait for echo to go HIGH
     while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_11) == GPIO_PIN_RESET);
 
-    // 3️⃣ Start timer
-    __HAL_TIM_SET_COUNTER(&htim2, 0);
+    // 3�?⃣ Start timer
+    __HAL_TIM_SET_COUNTER(&htim7, 0);
 
-    // 4️⃣ Wait for echo to go LOW
+    // 4�?⃣ Wait for echo to go LOW
     while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_11) == GPIO_PIN_SET);
 
-    // 5️⃣ Read time
-    time = __HAL_TIM_GET_COUNTER(&htim2);
+    // 5�?⃣ Read time
+    time = __HAL_TIM_GET_COUNTER(&htim7);
 
-    // 6️⃣ Convert to distance (cm)
+    // 6�?⃣ Convert to distance (cm)
     return (time * 0.0343f) / 2.0f;
 }
 /* USER CODE END 4 */
