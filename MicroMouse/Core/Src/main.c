@@ -26,7 +26,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+float US_Read();
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -55,6 +55,7 @@ int32_t rollover_counterR;
 float velocityL;
 int32_t positionL;
 int32_t rollover_counterL;
+float distance;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -66,7 +67,7 @@ static void MX_TIM2_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
-
+void IMU_sensor(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -121,6 +122,9 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+
+	  distance = US_Read();
+	  HAL_Delay(500);
   }
   /* USER CODE END 3 */
 }
@@ -553,6 +557,30 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		}
 		positionL = htim3.Instance->CNT + (rollover_counterL * 48);	// absolute position calculated
 	}
+float US_Read(void)
+{
+    uint32_t time = 0;
+
+    // 1️⃣ Send 10us trigger pulse
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_SET);
+    __HAL_TIM_SET_COUNTER(&htim2, 0);
+    while(__HAL_TIM_GET_COUNTER(&htim2) < 10);   // 10µs
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
+
+    // 2️⃣ Wait for echo to go HIGH
+    while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_11) == GPIO_PIN_RESET);
+
+    // 3️⃣ Start timer
+    __HAL_TIM_SET_COUNTER(&htim2, 0);
+
+    // 4️⃣ Wait for echo to go LOW
+    while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_11) == GPIO_PIN_SET);
+
+    // 5️⃣ Read time
+    time = __HAL_TIM_GET_COUNTER(&htim2);
+
+    // 6️⃣ Convert to distance (cm)
+    return (time * 0.0343f) / 2.0f;
 }
 /* USER CODE END 4 */
 
