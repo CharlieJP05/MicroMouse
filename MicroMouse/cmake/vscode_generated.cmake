@@ -22,7 +22,7 @@ set(cpu_PARAMS ${CPU_FLAGS} ${cpu_PARAMS})
 
 # Linker script
 set(linker_script_SRC ${linker_script_SRC}
-	${CMAKE_CURRENT_SOURCE_DIR}/stm32f446xe_flash.ld
+	${CMAKE_CURRENT_SOURCE_DIR}/STM32F446RETX_FLASH.ld
 )
 
 # Sources
@@ -43,6 +43,7 @@ set(include_asm_DIRS ${include_asm_DIRS}
 # Symbols definition
 set(symbols_c_SYMB ${symbols_c_SYMB}
 	RTE_DEVICE_STARTUP_STM32F4XX
+	STM32F446xx
 )
 set(symbols_cxx_SYMB ${symbols_cxx_SYMB}
 )
