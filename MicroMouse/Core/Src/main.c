@@ -411,31 +411,7 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-float US_Read(void)
-{
-    uint32_t time = 0;
 
-    // 1️⃣ Send 10us trigger pulse
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_SET);
-    __HAL_TIM_SET_COUNTER(&htim2, 0);
-    while(__HAL_TIM_GET_COUNTER(&htim2) < 10);   // 10µs
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
-
-    // 2️⃣ Wait for echo to go HIGH
-    while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_11) == GPIO_PIN_RESET);
-
-    // 3️⃣ Start timer
-    __HAL_TIM_SET_COUNTER(&htim2, 0);
-
-    // 4️⃣ Wait for echo to go LOW
-    while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_11) == GPIO_PIN_SET);
-
-    // 5️⃣ Read time
-    time = __HAL_TIM_GET_COUNTER(&htim2);
-
-    // 6️⃣ Convert to distance (cm)
-    return (time * 0.0343f) / 2.0f;
-}
 /* USER CODE END 4 */
 
 /**
