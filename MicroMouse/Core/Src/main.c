@@ -31,7 +31,8 @@ float US_Read();
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+/* Maximum HC-SR04 echo duration in microseconds (~6.5 m max range at 343 m/s) */
+#define US_ECHO_TIMEOUT_US  38000U
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -303,7 +304,7 @@ static void MX_TIM3_Init(void)
   htim3.Instance = TIM3;
   htim3.Init.Prescaler = 0;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 84;
+  htim3.Init.Period = 65535;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   sConfig.EncoderMode = TIM_ENCODERMODE_TI12;
@@ -561,37 +562,40 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 	if(htim == &htim6)
 	{
-		 positionR = htim2.Instance->CNT; // copy CNT into global variable
-		 // finds full amount of rotational ticks
-		 positionR = positionR + (rollover_counterR * 48);
+		 /* Use actual timer periods (ARR+1) for absolute position calculation */
+		 uint32_t periodR = __HAL_TIM_GET_AUTORELOAD(&htim2) + 1U;
+		 uint32_t periodL = __HAL_TIM_GET_AUTORELOAD(&htim3) + 1U;
 
-		 velocityR = (positionR - preposR) * 20; //calculates angular velocity
+		 positionR = (int32_t)htim2.Instance->CNT; // copy CNT into global variable
+		 // finds full amount of rotational ticks using rollover counter and timer period
+		 positionR = positionR + (rollover_counterR * (int32_t)periodR);
+
+		 velocityR = (positionR - preposR) * 50; //calculates angular velocity (ticks/s at 50 Hz)
 		 preposR = positionR;	//stores current position in variable
 
-		 positionL = htim3.Instance->CNT; // copy CNT into global variable
-		 // finds full amount of rotational ticks
-		 positionL = positionL + (rollover_counterL * 48);
+		 positionL = (int32_t)htim3.Instance->CNT; // copy CNT into global variable
+		 // finds full amount of rotational ticks using rollover counter and timer period
+		 positionL = positionL + (rollover_counterL * (int32_t)periodL);
 
-		 velocityL = (positionL - preposL) * 20; //calculates angular velocity
+		 velocityL = (positionL - preposL) * 50; //calculates angular velocity (ticks/s at 50 Hz)
 		 preposL = positionL;	//stores current position in variable
 
 	}
 
 	if(htim == &htim2)
 	{
-		/* Compute timer period (wrap size) from ARR and its half-period */
-		uint32_t periodR = __HAL_TIM_GET_AUTORELOAD(&htim2) + 1U;
-		uint32_t halfPeriodR = periodR / 2U;
+		/* Use uint64_t to avoid overflow when ARR=0xFFFFFFFF (32-bit timer full range) */
+		uint64_t periodR = (uint64_t)__HAL_TIM_GET_AUTORELOAD(&htim2) + 1ULL;
+		uint64_t halfPeriodR = periodR / 2ULL;
 
 		if(htim2.Instance->CNT < halfPeriodR) // if CNT is less than half of the period
 		{
-			rollover_counterR +=1;	// increment counter
+			rollover_counterR +=1;	// increment counter (forward overflow)
 		}
 		if(htim2.Instance->CNT > halfPeriodR) // if CNT is more than half of the period
 		{
-			rollover_counterR -=1;	// decrement counter
+			rollover_counterR -=1;	// decrement counter (backward underflow)
 		}
-		positionR = (int32_t)htim2.Instance->CNT + (rollover_counterR * (int32_t)periodR);	// absolute position calculated
 	}
 	if(htim == &htim3)
 	{
@@ -601,38 +605,44 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 		if(htim3.Instance->CNT < halfPeriodL) // if CNT is less than half of the period
 		{
-			rollover_counterL +=1;	// increment counter
+			rollover_counterL +=1;	// increment counter (forward overflow)
 		}
 		if(htim3.Instance->CNT > halfPeriodL) // if CNT is more than half of the period
 		{
-			rollover_counterL -=1;	// decrement counter
+			rollover_counterL -=1;	// decrement counter (backward underflow)
 		}
-		positionL = (int32_t)htim3.Instance->CNT + (rollover_counterL * (int32_t)periodL);	// absolute position calculated
 	}
 }
 float US_Read(void)
 {
     uint32_t time = 0;
 
-    // 1�?⃣ Send 10us trigger pulse
+    // Step 1: Send 10us trigger pulse
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_SET);
     __HAL_TIM_SET_COUNTER(&htim7, 0);
-    while(__HAL_TIM_GET_COUNTER(&htim7) < 10);   // 10µs
+    while(__HAL_TIM_GET_COUNTER(&htim7) < 10);   // 10us
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
 
-    // 2�?⃣ Wait for echo to go HIGH
-    while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_11) == GPIO_PIN_RESET);
+    // Step 2: Wait for echo to go HIGH (timeout ~38ms)
+    __HAL_TIM_SET_COUNTER(&htim7, 0);
+    while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_11) == GPIO_PIN_RESET)
+    {
+        if(__HAL_TIM_GET_COUNTER(&htim7) > US_ECHO_TIMEOUT_US) return -1.0f; // timeout
+    }
 
-    // 3�?⃣ Start timer
+    // Step 3: Start timer
     __HAL_TIM_SET_COUNTER(&htim7, 0);
 
-    // 4�?⃣ Wait for echo to go LOW
-    while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_11) == GPIO_PIN_SET);
+    // Step 4: Wait for echo to go LOW (timeout ~38ms)
+    while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_11) == GPIO_PIN_SET)
+    {
+        if(__HAL_TIM_GET_COUNTER(&htim7) > US_ECHO_TIMEOUT_US) return -1.0f; // timeout
+    }
 
-    // 5�?⃣ Read time
+    // Step 5: Read time
     time = __HAL_TIM_GET_COUNTER(&htim7);
 
-    // 6�?⃣ Convert to distance (cm)
+    // Step 6: Convert to distance (cm)
     return (time * 0.0343f) / 2.0f;
 }
 /* USER CODE END 4 */
