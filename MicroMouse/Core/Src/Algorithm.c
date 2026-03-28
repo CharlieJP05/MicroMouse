@@ -7,7 +7,7 @@
 
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 
-void init(void) // add things it should do when robot starts here, aka map setup
+void Algorithm_init(void) // add things it should do when robot starts here, aka map setup
 {
 
 }

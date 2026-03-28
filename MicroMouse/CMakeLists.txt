@@ -48,6 +48,8 @@ set(project_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/syscalls.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/sysmem.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/system_stm32f4xx.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/Algorithm.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/Mapping.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/Sensors.c   # added
     ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/IO.c        # added
     ${CMAKE_CURRENT_SOURCE_DIR}/Core/Startup/startup_stm32f446retx.s

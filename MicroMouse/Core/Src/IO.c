@@ -4,16 +4,24 @@
 // remember: add new funcs to h, any inputs are needed there too.
 extern UART_HandleTypeDef huart2;
 
-void BUTTONS_Read(void) // TODO: implement
+void IO_init(void)
 {
+
 }
 
-void VR_Read(void) // TODO: implement
+void BUTTONS_Read(void)
 {
+
 }
 
-void LED_Write(void) // TODO: implement
+void VR_Read(void) // variable resitors
 {
+
+}
+
+void LED_Write(void)
+{
+
 }
 
 void Log(const char *msg) // print a message over UART

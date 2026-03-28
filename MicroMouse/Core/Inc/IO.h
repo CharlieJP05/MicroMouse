@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+void IO_init(void);
 void BUTTONS_Read(void);
 void VR_Read(void);
 void LED_Write(void);
