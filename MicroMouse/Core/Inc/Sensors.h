@@ -1,21 +1,11 @@
-// Sensors.h
 #ifndef SENSORS_H
 #define SENSORS_H
 
-//#include ???
-
-// // Public types and constants
-// typedef struct {
-//     int32_t value;
-// } MyStruct;
-
-// #define MY_CONST 42
-
+#include <stdint.h>
 
 float US_Read(void);
 void IR_Read(void);
-void IMU_Read();
-void ENC_Read();
+void IMU_Read(void);
+void ENC_Read(void);
 
-
-#endif
+#endif // SENSORS_H
