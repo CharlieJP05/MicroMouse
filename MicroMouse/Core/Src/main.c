@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "Algorithm.h"
@@ -25,19 +26,26 @@
 #include "IO.h"
 #include "Mapping.h"
 /* USER CODE END Includes */
+
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 /* USER CODE END PTD */
+
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 /* USER CODE END PD */
+
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 /* USER CODE END PM */
+
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
+
 TIM_HandleTypeDef htim2;
+
 UART_HandleTypeDef huart2;
+
 /* USER CODE BEGIN PV */
 float distance;
 /* USER CODE END PV */
@@ -373,11 +381,17 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF3_TIM8;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : SWITCH2_Pin PA11 */
-  GPIO_InitStruct.Pin = SWITCH2_Pin|GPIO_PIN_11;
+  /*Configure GPIO pin : SWITCH2_Pin */
+  GPIO_InitStruct.Pin = SWITCH2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(SWITCH2_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : US_ECHO_Pin */
+  GPIO_InitStruct.Pin = US_ECHO_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(US_ECHO_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : BT_TX_Pin BT_RX_Pin */
   GPIO_InitStruct.Pin = BT_TX_Pin|BT_RX_Pin;

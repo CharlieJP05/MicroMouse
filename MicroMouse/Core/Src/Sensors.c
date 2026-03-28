@@ -2,6 +2,11 @@
 #include "main.h"
 
 extern TIM_HandleTypeDef htim2;
+/* Local echo pin alias (kept here so IOC-generated headers remain untouched) */
+#ifndef US_ECHO_Pin
+#define US_ECHO_Pin GPIO_PIN_11
+#define US_ECHO_GPIO_Port GPIOA
+#endif
 // remember: add new funcs to h, any inputs are needed there too.
 void Sensors_init(void)
 {
@@ -11,11 +16,12 @@ void Sensors_init(void)
 
 float US_Read(void)
 {
-    uint32_t pulse = 0;
-    const uint32_t timeout_us = 30000;   // ~30 ms at 1 MHz timer
+    const uint32_t timeout_us = 30000; // ~30 ms at 1 MHz timer
     const float sound_cm_per_us = 0.0343f;
+    const uint32_t min_pulse_us = 100; // ~2 cm; anything shorter is noise
+    uint32_t pulse = 0;
 
-    // Ensure echo is low before triggering
+    // Make sure echo is low before triggering
     __HAL_TIM_SET_COUNTER(&htim2, 0);
     while (HAL_GPIO_ReadPin(US_ECHO_GPIO_Port, US_ECHO_Pin) == GPIO_PIN_SET) {
         if (__HAL_TIM_GET_COUNTER(&htim2) >= timeout_us) return -1.0f;
@@ -24,7 +30,7 @@ float US_Read(void)
     // Send 10us trigger pulse
     HAL_GPIO_WritePin(US_TRIG_GPIO_Port, US_TRIG_Pin, GPIO_PIN_SET);
     __HAL_TIM_SET_COUNTER(&htim2, 0);
-    while (__HAL_TIM_GET_COUNTER(&htim2) < 10) {}
+    while (__HAL_TIM_GET_COUNTER(&htim2) < 10) {} // 10 us high
     HAL_GPIO_WritePin(US_TRIG_GPIO_Port, US_TRIG_Pin, GPIO_PIN_RESET);
 
     // Wait for rising edge on echo
@@ -33,12 +39,14 @@ float US_Read(void)
         if (__HAL_TIM_GET_COUNTER(&htim2) >= timeout_us) return -1.0f;
     }
 
-    // Measure pulse width while echo is high
+    // Measure echo high pulse
     __HAL_TIM_SET_COUNTER(&htim2, 0);
     while (HAL_GPIO_ReadPin(US_ECHO_GPIO_Port, US_ECHO_Pin) == GPIO_PIN_SET) {
         if (__HAL_TIM_GET_COUNTER(&htim2) >= timeout_us) return -1.0f;
     }
     pulse = __HAL_TIM_GET_COUNTER(&htim2);
+
+    if (pulse < min_pulse_us) return -1.0f; // reject spurious short blips
 
     return (pulse * sound_cm_per_us) * 0.5f; // distance in cm
 }
