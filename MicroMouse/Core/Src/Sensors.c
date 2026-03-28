@@ -2,7 +2,7 @@
 #include "main.h"
 
 extern TIM_HandleTypeDef htim2;
-
+// remember: add new funcs to h, any inputs are needed there too.
 float US_Read(void)
 {
     uint32_t time = 0;

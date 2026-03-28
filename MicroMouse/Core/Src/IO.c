@@ -1,7 +1,7 @@
 #include "IO.h"
 #include "main.h"
 #include <string.h>
-
+// remember: add new funcs to h, any inputs are needed there too.
 extern UART_HandleTypeDef huart2;
 
 void BUTTONS_Read(void) // TODO: implement
