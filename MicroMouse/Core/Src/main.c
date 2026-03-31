@@ -132,8 +132,9 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-	  distance = US_Read();
-	  HAL_Delay(500);
+	  //distance = US_Read();
+	  //HAL_Delay(500);
+	  Enc_locate(positionL,positionR);
   }
   /* USER CODE END 3 */
 }
@@ -579,7 +580,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	{
 		 positionR = htim2.Instance->CNT; // copy CNT into global variable
 		 // finds full amount of rotational ticks
-		 positionR = positionR + (rollover_counterR * 48);
+		 positionR = -(positionR + (rollover_counterR * 48));
 
 		 velocityR = (positionR - preposR) * 20; //calculates angular velocity
 		 preposR = positionR;	//stores current position in variable
@@ -603,7 +604,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		{
 			rollover_counterR -=1;	// decrement counter
 		}
-		positionR = htim2.Instance->CNT + (rollover_counterR * 48);	// absolute position calculated
+		positionR = -(htim2.Instance->CNT + (rollover_counterR * 48));	// absolute position calculated
 	}
 	if(htim == &htim3)
 	{
