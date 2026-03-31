@@ -41,13 +41,19 @@
 
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
-
 TIM_HandleTypeDef htim2;
-
+TIM_HandleTypeDef htim3;
+TIM_HandleTypeDef htim6;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 float distance;
+float velocityR;
+int32_t positionR;
+int32_t rollover_counterR;
+float velocityL;
+int32_t positionL;
+int32_t rollover_counterL;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -56,6 +62,8 @@ static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM2_Init(void);
+static void MX_TIM3_Init(void);
+static void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -97,11 +105,16 @@ int main(void)
   MX_USART2_UART_Init();
   MX_ADC1_Init();
   MX_TIM2_Init();
+  MX_TIM3_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
   Sensors_init();
   Mapping_init();
   IO_init();
   Algorithm_init();
+  HAL_TIM_Base_Start_IT(&htim6);	// start timer6 to generate interrupt
+  HAL_TIM_Encoder_Start(&htim2,TIM_CHANNEL_ALL);	// start the Quadrature encoder (timer 2)
+  HAL_TIM_Encoder_Start(&htim3,TIM_CHANNEL_ALL);	// start the Quadrature encoder (timer 3)
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -230,6 +243,7 @@ static void MX_TIM2_Init(void)
   /* USER CODE END TIM2_Init 0 */
 
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_Encoder_InitTypeDef sConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
 
   /* USER CODE BEGIN TIM2_Init 1 */
@@ -247,6 +261,21 @@ static void MX_TIM2_Init(void)
   }
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
   if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  htim2.Init.Prescaler = 0;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 84;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  sConfig.EncoderMode = TIM_ENCODERMODE_TI12;
+  sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC1Filter = 0xf;
+  sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC2Filter = 0xf;
+  if (HAL_TIM_Encoder_Init(&htim2, &sConfig) != HAL_OK)
   {
     Error_Handler();
   }
@@ -257,8 +286,96 @@ static void MX_TIM2_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN TIM2_Init 2 */
-
+  __HAL_TIM_CLEAR_FLAG(&htim2, TIM_FLAG_UPDATE);
+  __HAL_TIM_ENABLE_IT(&htim2, TIM_IT_UPDATE);
   /* USER CODE END TIM2_Init 2 */
+
+}
+
+/**
+  * @brief TIM3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM3_Init(void)
+{
+
+  /* USER CODE BEGIN TIM3_Init 0 */
+
+  /* USER CODE END TIM3_Init 0 */
+
+  TIM_Encoder_InitTypeDef sConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM3_Init 1 */
+
+  /* USER CODE END TIM3_Init 1 */
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 0;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 84;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  sConfig.EncoderMode = TIM_ENCODERMODE_TI12;
+  sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC1Filter = 0xf;
+  sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC2Filter = 0xf;
+  if (HAL_TIM_Encoder_Init(&htim3, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM3_Init 2 */
+
+  /* USER CODE END TIM3_Init 2 */
+
+}
+
+/**
+  * @brief TIM6 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM6_Init(void)
+{
+
+  /* USER CODE BEGIN TIM6_Init 0 */
+
+  /* USER CODE END TIM6_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM6_Init 1 */
+
+  /* USER CODE END TIM6_Init 1 */
+  htim6.Instance = TIM6;
+  htim6.Init.Prescaler = 84-1;
+  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim6.Init.Period = 20000-1;
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM6_Init 2 */
+
+  /* USER CODE END TIM6_Init 2 */
 
 }
 
@@ -335,14 +452,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : M2ENC_A_Pin M2ENC_B_Pin */
-  GPIO_InitStruct.Pin = M2ENC_A_Pin|M2ENC_B_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.Alternate = GPIO_AF2_TIM3;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
   /*Configure GPIO pins : LED1_Pin IR1_OUT_Pin IR2_OUT_Pin LED2_Pin
                            LED3_Pin */
   GPIO_InitStruct.Pin = LED1_Pin|IR1_OUT_Pin|IR2_OUT_Pin|LED2_Pin
@@ -381,10 +490,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF3_TIM8;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : SWITCH2_Pin */
-  GPIO_InitStruct.Pin = SWITCH2_Pin;
+  /*Configure GPIO pins : SWITCH2_Pin PA11 */
+  GPIO_InitStruct.Pin = SWITCH2_Pin|GPIO_PIN_11;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
+  //HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
   HAL_GPIO_Init(SWITCH2_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : US_ECHO_Pin */
@@ -420,7 +530,55 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
 
+	static int32_t preposR;
+	static int32_t preposL;
+
+	if(htim == &htim6)
+	{
+		 positionR = htim2.Instance->CNT; // copy CNT into global variable
+		 // finds full amount of rotational ticks
+		 positionR = positionR + (rollover_counterR * 48);
+
+		 velocityR = (positionR - preposR) * 20; //calculates angular velocity
+		 preposR = positionR;	//stores current position in variable
+
+		 positionL = htim3.Instance->CNT; // copy CNT into global variable
+		 // finds full amount of rotational ticks
+		 positionL = positionL + (rollover_counterL * 48);
+
+		 velocityL = (positionL - preposL) * 20; //calculates angular velocity
+		 preposL = positionL;	//stores current position in variable
+
+	}
+
+	if(htim == &htim2)
+	{
+		if(htim2.Instance->CNT < 24) // if CNT is less than half of ARR (48)
+		{
+			rollover_counterR +=1;	// increment counter
+		}
+		if(htim2.Instance->CNT > 24) // if CNT is more than half of ARR (48)
+		{
+			rollover_counterR -=1;	// decrement counter
+		}
+		positionR = htim2.Instance->CNT + (rollover_counterR * 48);	// absolute position calculated
+	}
+	if(htim == &htim3)
+	{
+		if(htim3.Instance->CNT < 24) // if CNT is less than half of ARR (48)
+		{
+			rollover_counterL +=1;	// increment counter
+		}
+		if(htim3.Instance->CNT > 24) // if CNT is more than half of ARR (48)
+		{
+			rollover_counterL -=1;	// decrement counter
+		}
+		positionL = htim3.Instance->CNT + (rollover_counterL * 48);	// absolute position calculated
+	}
+}
 /* USER CODE END 4 */
 
 /**
