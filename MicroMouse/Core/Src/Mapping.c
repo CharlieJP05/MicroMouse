@@ -39,7 +39,16 @@ void Enc_locate(int new_L, int new_R)
 	prev_R = new_R;
 }
 
-void LogXY() {
+float Mapping_GetX(void)
+{
+	return x;
+}
+
+float Mapping_GetY(void)
+{
+	return y;
+}
+void LogXY(void){
 	char buf[64];
 
 	int xi = (int)x;
@@ -58,7 +67,7 @@ void LogXY() {
 		"x: %d.%02d, y: %d.%02d, t: %d.%02d\r\n",
 		xi, xf, yi, yf, ti, tf);
 
-	Log(buf);
+	//Log(buf);
 }
 // possible functions:
 

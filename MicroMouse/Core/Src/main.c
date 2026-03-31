@@ -68,6 +68,7 @@ static void MX_TIM2_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM6_Init(void);
 static void MX_TIM5_Init(void);
+
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -135,6 +136,9 @@ int main(void)
 	  //distance = US_Read();
 	  //HAL_Delay(500);
 	  Enc_locate(positionL,positionR);
+	  float x = Mapping_GetX();
+	  float y = Mapping_GetY();
+	  LogPos(x,y);
   }
   /* USER CODE END 3 */
 }
