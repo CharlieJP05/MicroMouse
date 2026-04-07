@@ -160,6 +160,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	static int32_t preposR;
 	static int32_t preposL;
+	float Kp = 1.0f;
 
     if (htim == &htim4)
         HAL_I2C_Mem_Read_DMA(&hi2c1, LSM6DSO_ADDRESS, OUT_TEMP_L,
@@ -180,6 +181,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 		 velocityL = (positionL - preposL) * 20; //calculates angular velocity
 		 preposL = positionL;	//stores current position in variable
+
+		 // PID controller
+		 // starting with simple P
+		 float errorL = targetL - velocityL;
+		 float errorR = targetR - velocityR;
+
+		 float controlL = Kp * errorL;
+		 float controlR = Kp * errorR;
 
 	}
 
