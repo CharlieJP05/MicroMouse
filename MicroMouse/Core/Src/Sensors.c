@@ -182,13 +182,32 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		 velocityL = (positionL - preposL) * 20; //calculates angular velocity
 		 preposL = positionL;	//stores current position in variable
 
-		 // PID controller
+		 // PID controller (only encoders so far)
 		 // starting with simple P
+		 float dt = 0.02f; // time between each time step is 20ms
+
 		 float errorL = targetL - velocityL;
 		 float errorR = targetR - velocityR;
 
-		 float controlL = Kp * errorL;
-		 float controlR = Kp * errorR;
+		 static float integralL = 0;
+		 static float integralR = 0;
+		 // adding I
+		 float Ki = 0.1f;
+
+		 integralL += errorL * 0.02f;
+		 integralR += errorR * 0.02f;
+		 // adding D
+		 float Kd = 0.01f;
+
+		 static float prev_errorL = 0;
+		 float derivativeL = (errorL - prev_errorL) / dt;
+		 prev_errorL = errorL;
+		 static float prev_errorR = 0;
+		 float derivativeR = (errorR - prev_errorR) / dt;
+		 prev_errorR = errorR;
+		 // final values
+		 float controlL = Kp * errorL + Ki * integralL + Kd * derivativeL;
+		 float controlR = Kp * errorR + Ki * integralR + Kd * derivativeR;
 
 	}
 
