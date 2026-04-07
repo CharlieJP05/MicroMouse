@@ -50,13 +50,7 @@ TIM_HandleTypeDef htim6;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-float distance;
-float velocityR;
-int32_t positionR;
-int32_t rollover_counterR;
-float velocityL;
-int32_t positionL;
-int32_t rollover_counterL;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -570,55 +564,7 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
 
-	static int32_t preposR;
-	static int32_t preposL;
-
-	if(htim == &htim6)
-	{
-		 positionR = htim2.Instance->CNT; // copy CNT into global variable
-		 // finds full amount of rotational ticks
-		 positionR = -(positionR + (rollover_counterR * 48));
-
-		 velocityR = (positionR - preposR) * 20; //calculates angular velocity
-		 preposR = positionR;	//stores current position in variable
-
-		 positionL = htim3.Instance->CNT; // copy CNT into global variable
-		 // finds full amount of rotational ticks
-		 positionL = positionL + (rollover_counterL * 48);
-
-		 velocityL = (positionL - preposL) * 20; //calculates angular velocity
-		 preposL = positionL;	//stores current position in variable
-
-	}
-
-	if(htim == &htim2)
-	{
-		if(htim2.Instance->CNT < 24) // if CNT is less than half of ARR (48)
-		{
-			rollover_counterR +=1;	// increment counter
-		}
-		if(htim2.Instance->CNT > 24) // if CNT is more than half of ARR (48)
-		{
-			rollover_counterR -=1;	// decrement counter
-		}
-		positionR = -(htim2.Instance->CNT + (rollover_counterR * 48));	// absolute position calculated
-	}
-	if(htim == &htim3)
-	{
-		if(htim3.Instance->CNT < 24) // if CNT is less than half of ARR (48)
-		{
-			rollover_counterL +=1;	// increment counter
-		}
-		if(htim3.Instance->CNT > 24) // if CNT is more than half of ARR (48)
-		{
-			rollover_counterL -=1;	// decrement counter
-		}
-		positionL = htim3.Instance->CNT + (rollover_counterL * 48);	// absolute position calculated
-	}
-}
 /* USER CODE END 4 */
 
 /**
