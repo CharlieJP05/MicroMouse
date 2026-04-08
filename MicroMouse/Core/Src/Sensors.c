@@ -186,6 +186,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		 // starting with simple P
 		 float dt = 0.02f; // time between each time step is 20ms
 
+		 // target is not defined as of now as it should come from movement commands
 		 float errorL = targetL - velocityL;
 		 float errorR = targetR - velocityR;
 
