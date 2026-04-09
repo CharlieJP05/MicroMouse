@@ -1,0 +1,256 @@
+MicroMouse - Sensor Implementation Guide
+=========================================
+Platform: STM32F446RETx (HAL / STM32CubeIDE)
+
+This document describes how to implement drivers for each sensor fitted
+to the board: the HC-SR04 ultrasonic sensor, four IR proximity sensors,
+and the IMU.
+
+========================================================================
+1. ULTRASONIC SENSOR (HC-SR04)
+========================================================================
+
+Hardware connections (from IOC):
+  US_TRIG  -> PA12  (GPIO_Output)
+  US_ECHO  -> PA11  (TIM1_CH4, AF1, input capture)
+
+1.1 Timer Configuration
+-----------------------
+Configure TIM1 Channel 4 in input-capture mode in STM32CubeMX:
+  - Prescaler: 83  (84 MHz / (83+1) = 1 MHz => 1 tick = 1 microsecond)
+  - Period (ARR): 65535 (maximum)
+  - Channel 4: Input Capture, rising edge, no filter
+  - Enable TIM1_CC_IRQn interrupt
+
+1.2 Driver Logic
+----------------
+Variables needed:
+  volatile uint32_t us_echo_start = 0;
+  volatile uint32_t us_echo_end   = 0;
+  volatile uint8_t  us_echo_state = 0; // 0=idle, 1=waiting_fall
+  volatile uint32_t us_distance_mm = 0;
+
+Trigger function (call at ~20 Hz from SysTick or a scheduler):
+  void US_Trigger(void)
+  {
+      HAL_GPIO_WritePin(US_TRIG_GPIO_Port, US_TRIG_Pin, GPIO_PIN_SET);
+      // busy-wait or use DWT cycle counter for exactly 10 us
+      delay_us(10);
+      HAL_GPIO_WritePin(US_TRIG_GPIO_Port, US_TRIG_Pin, GPIO_PIN_RESET);
+      us_echo_state = 1; // arm capture
+  }
+
+Input capture ISR:
+  void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
+  {
+      if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
+          if (us_echo_state == 1) {          // rising edge - start timing
+              us_echo_start = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_4);
+              // Reconfigure capture for falling edge
+              __HAL_TIM_SET_CAPTUREPOLARITY(htim, TIM_CHANNEL_4,
+                                            TIM_INPUTCHANNELPOLARITY_FALLING);
+              us_echo_state = 2;
+          } else if (us_echo_state == 2) {   // falling edge - end timing
+              us_echo_end = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_4);
+              uint32_t pulse_us = (us_echo_end >= us_echo_start)
+                                  ? (us_echo_end - us_echo_start)
+                                  : (65536 - us_echo_start + us_echo_end);
+              us_distance_mm = pulse_us * 10 / 58; // 343 m/s => 1 us ~ 0.1715 mm one-way
+              // integer approx: pulse_us / 5.8 = pulse_us * 10 / 58
+              // Reconfigure for rising edge again
+              __HAL_TIM_SET_CAPTUREPOLARITY(htim, TIM_CHANNEL_4,
+                                            TIM_INPUTCHANNELPOLARITY_RISING);
+              us_echo_state = 0;
+          }
+      }
+  }
+
+1.3 Practical Notes
+-------------------
+- The HC-SR04 has a minimum reliable range of ~20 mm; returns ~38 ms
+  echo (>4 m) when no object detected - handle this as "no wall".
+- Avoid triggering more than once every 60 ms to prevent echo overlap.
+- Mount the sensor pointing forward, centred on the robot chassis.
+
+========================================================================
+2. INFRARED SENSORS (4 x emitter/receiver pairs)
+========================================================================
+
+Hardware connections (from IOC):
+  IR1_OUT -> PB12   ADC_IR1 -> PA4  (ADC1_IN4)     Front-left
+  IR2_OUT -> PB13   ADC_IR2 -> PB0  (ADC1_IN8)     Front-right
+  IR3_OUT -> PC6    ADC_IR3 -> PC0  (ADC1_IN10)    Left side
+  IR4_OUT -> PA5    ADC_IR4 -> PC1  (ADC1_IN11)    Right side
+
+2.1 ADC Configuration
+---------------------
+In STM32CubeMX:
+  - ADC1, 12-bit resolution, right-aligned data
+  - Scan mode ENABLED (to sequence through all 4 channels)
+  - NbrOfConversion = 4
+  - Channels: IN4 (rank 1), IN8 (rank 2), IN10 (rank 3), IN11 (rank 4)
+  - Software trigger, single conversion, DMA transfer to uint16_t[4]
+  - Sample time: 84 cycles (longer = less noise; ~4 us per channel)
+  - Enable DMA2 Stream 0 (ADC1) in circular mode for continuous reads
+
+2.2 Scanning Sequence (Multiplexed to reduce cross-talk)
+---------------------------------------------------------
+Read all four sensors in a burst once per control cycle (~1 kHz loop):
+
+  uint16_t ir_raw[4];        // raw ADC values (ambient + reflected)
+  uint16_t ir_ambient[4];    // ambient light values (emitter off)
+  uint16_t ir_value[4];      // compensated values
+
+  void IR_ReadAll(void)
+  {
+      // Step 1: read ambient (all emitters OFF)
+      // Use DMA completion callback (HAL_ADC_ConvCpltCallback) to signal
+      // when conversion is done; avoid HAL_Delay which blocks the CPU.
+      // For simplicity in a polling context you may also use:
+      //   HAL_ADC_Start(&hadc1); HAL_ADC_PollForConversion(&hadc1, 1);
+      HAL_ADC_Start_DMA(&hadc1, (uint32_t*)ir_ambient, 4);
+      // Wait for DMA complete flag (set in HAL_ADC_ConvCpltCallback)
+      while (!adc_dma_done) {}  adc_dma_done = 0;
+
+      // Step 2: enable all emitters and read reflected
+      HAL_GPIO_WritePin(GPIOB, IR1_OUT_Pin | IR2_OUT_Pin, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(IR3_OUT_GPIO_Port, IR3_OUT_Pin, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(GPIOA, IR4_OUT_Pin, GPIO_PIN_SET);
+      delay_us(50);  // allow emitter to settle (~16 us ADC scan + margin)
+
+      HAL_ADC_Start_DMA(&hadc1, (uint32_t*)ir_raw, 4);
+      while (!adc_dma_done) {}  adc_dma_done = 0;
+
+      // Step 3: disable emitters
+      HAL_GPIO_WritePin(GPIOB, IR1_OUT_Pin | IR2_OUT_Pin, GPIO_PIN_RESET);
+      HAL_GPIO_WritePin(IR3_OUT_GPIO_Port, IR3_OUT_Pin, GPIO_PIN_RESET);
+      HAL_GPIO_WritePin(GPIOA, IR4_OUT_Pin, GPIO_PIN_RESET);
+
+      // Step 4: subtract ambient
+      for (int i = 0; i < 4; i++) {
+          ir_value[i] = (ir_raw[i] > ir_ambient[i])
+                        ? (ir_raw[i] - ir_ambient[i]) : 0;
+      }
+  }
+
+2.3 Wall Detection Threshold
+-----------------------------
+After ambient subtraction, apply a threshold to decide wall / no-wall:
+  #define IR_WALL_THRESHOLD  800  // tune for your maze surface
+  bool wall_left   = ir_value[2] > IR_WALL_THRESHOLD;
+  bool wall_right  = ir_value[3] > IR_WALL_THRESHOLD;
+  bool wall_front  = (ir_value[0] + ir_value[1]) / 2 > IR_WALL_THRESHOLD;
+
+Use the front-left and front-right IR pair average for the front wall
+(or use the US sensor for the front to get a more accurate distance).
+
+2.4 Distance Calibration (Optional Look-Up Table)
+--------------------------------------------------
+Collect ADC values at known distances (10, 20, 30, ... 100 mm) and
+store them in a table. Use linear interpolation at runtime to get a
+millimetre reading. This is useful for centring the robot in the cell.
+
+========================================================================
+3. IMU  (I2C1 - MPU-6050 example)
+========================================================================
+
+Hardware connections (from IOC):
+  IMU_SCL -> PB8  (I2C1_SCL, AF4, open-drain)
+  IMU_SDA -> PB9  (I2C1_SDA, AF4, open-drain)
+  External pull-up resistors required: 4.7 kOhm to 3.3 V.
+
+3.1 I2C Configuration
+---------------------
+In STM32CubeMX:
+  - I2C1, Standard mode 100 kHz or Fast mode 400 kHz
+  - Own address: not used (master only)
+  - Enable global I2C1 interrupt (optional, for DMA mode)
+
+3.2 MPU-6050 Initialisation
+----------------------------
+  #define MPU6050_ADDR   (0x68 << 1)  // AD0 pin LOW
+  #define PWR_MGMT_1     0x6B
+  #define CONFIG_REG     0x1A
+  #define GYRO_CONFIG    0x1B
+  #define ACCEL_CONFIG   0x1C
+  #define SMPLRT_DIV     0x19
+
+  void IMU_Init(void)
+  {
+      uint8_t data;
+
+      // Wake up (clear sleep bit)
+      data = 0x00;
+      HAL_I2C_Mem_Write(&hi2c1, MPU6050_ADDR, PWR_MGMT_1, 1, &data, 1, 100);
+
+      // Set sample rate divider: 1 kHz / (1 + 7) = 125 Hz
+      data = 0x07;
+      HAL_I2C_Mem_Write(&hi2c1, MPU6050_ADDR, SMPLRT_DIV, 1, &data, 1, 100);
+
+      // DLPF: 42 Hz bandwidth (reduces noise)
+      data = 0x03;
+      HAL_I2C_Mem_Write(&hi2c1, MPU6050_ADDR, CONFIG_REG, 1, &data, 1, 100);
+
+      // Gyro full scale: +/- 500 dps (gives 65.5 LSB/dps)
+      data = 0x08;
+      HAL_I2C_Mem_Write(&hi2c1, MPU6050_ADDR, GYRO_CONFIG, 1, &data, 1, 100);
+
+      // Accel full scale: +/- 2g (gives 16384 LSB/g)
+      data = 0x00;
+      HAL_I2C_Mem_Write(&hi2c1, MPU6050_ADDR, ACCEL_CONFIG, 1, &data, 1, 100);
+  }
+
+3.3 Reading Gyro Z for Heading Integration
+-------------------------------------------
+  #define GYRO_ZOUT_H    0x47
+  #define GYRO_SENS      65.5f  // LSB per deg/s for +/-500 dps range
+
+  float heading_deg = 0.0f;    // integrated heading
+  float gyro_z_offset = 0.0f;  // calibration offset (measure at rest)
+
+  void IMU_UpdateHeading(float dt_seconds)
+  {
+      uint8_t buf[2];
+      HAL_I2C_Mem_Read(&hi2c1, MPU6050_ADDR, GYRO_ZOUT_H, 1, buf, 2, 100);
+      int16_t gz_raw = (int16_t)((buf[0] << 8) | buf[1]);
+      float gz_dps = (gz_raw / GYRO_SENS) - gyro_z_offset;
+      heading_deg += gz_dps * dt_seconds;
+  }
+
+  Calibration (call at startup with robot stationary, ~500 samples):
+  void IMU_CalibrateGyro(void)
+  {
+      float sum = 0.0f;
+      for (int i = 0; i < 500; i++) {
+          uint8_t buf[2];
+          HAL_I2C_Mem_Read(&hi2c1, MPU6050_ADDR, GYRO_ZOUT_H, 1, buf, 2, 100);
+          int16_t gz = (int16_t)((buf[0] << 8) | buf[1]);
+          sum += gz;
+          HAL_Delay(2);
+      }
+      gyro_z_offset = (sum / 500.0f) / GYRO_SENS;
+  }
+
+3.4 Using Heading for Turns
+----------------------------
+To execute a 90-degree left turn:
+  float start_heading = heading_deg;
+  Motor_SetLeft(-TURN_SPEED);    // reverse left motor
+  Motor_SetRight(+TURN_SPEED);   // forward right motor
+  while ((heading_deg - start_heading) < 90.0f) {
+      IMU_UpdateHeading(0.001f); // call every 1 ms
+      HAL_Delay(1);
+  }
+  Motor_Stop();
+
+Note: wrap heading arithmetic to handle the 0/360 degree boundary.
+
+========================================================================
+4. MOTOR CURRENT SENSE
+========================================================================
+M1_SENSE  -> PC4  (ADC1_IN14)
+M2_SENSE  -> PC5  (ADC1_IN15)
+
+Use these ADC channels to detect motor stalls (current spike) or to
+implement torque-limited control. Read similarly to IR sensors using
+ADC scan mode or individual software-triggered conversions.
