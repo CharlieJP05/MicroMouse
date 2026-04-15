@@ -3,6 +3,8 @@
 #include "IO.h"
 #include <math.h>
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 // remember: add new funcs to h, any inputs are needed there too.
 
 
@@ -13,10 +15,68 @@ static float x = 0;
 static float y = 0;
 static float theta = 0;
 
+extern uint8_t map[18][18];
+
+
+
+
 void Mapping_init()
 {
 
 }
+
+void add_wall(int mapX, int mapY, int dir){
+	int nx = mapX;
+	int ny = mapY;
+
+	int OpDir = dir^2;
+
+	map[mapX][mapY] &= ~(0b11 << dir*2);
+	map[mapX][mapY]|= (1 << dir* 2);
+
+	switch(dir)
+	{
+	case 0:
+		nx+= 1;
+		return;
+	case 1:
+		ny += 1;
+		break;
+	case 2:
+		nx -= 1;
+		break;
+	case 3:
+		ny -= 1;
+		break;
+	default:
+		break;
+	}
+
+	if(nx < 0 || nx >17 || ny < 0|| ny > 17){return;}
+
+
+	map[nx][ny] &= ~(0b11 << dir*2);
+	map[nx][ny]   |= (1 << dir* 2);
+
+}
+
+
+void convertToMap(){
+	int mapX = x/18;
+	int mapY = y/18;
+
+	float localX = x%18;
+	float localY = y%18;
+
+	return;
+
+}
+
+
+void biggerOne(){
+
+}
+
 
 void Enc_locate(int new_L, int new_R)
 {
@@ -69,6 +129,9 @@ void LogXY(void){
 
 	//Log(buf);
 }
+
+
+
 // possible functions:
 
 // get all distances
