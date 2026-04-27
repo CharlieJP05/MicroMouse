@@ -1,6 +1,5 @@
 #include "Sensors.h"
 #include "main.h"
-
 /* Use the CubeMX-generated TIM5 (`htim5`) as the microsecond timebase.
    TIM5 is configured in the `.ioc` so generated code will provide `htim5`
    and `MX_TIM5_Init()`; here we reference the generated handle.

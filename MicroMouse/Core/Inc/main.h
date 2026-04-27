@@ -31,7 +31,8 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#define map_w 8
+#define map_h 6
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/

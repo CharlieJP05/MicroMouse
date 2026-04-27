@@ -15,7 +15,7 @@ static float x = 0;
 static float y = 0;
 static float theta = 0;
 
-extern uint8_t map[18][18];
+extern uint8_t map[map_w][map_h];
 
 
 
@@ -52,7 +52,7 @@ void add_wall(int mapX, int mapY, int dir){
 		break;
 	}
 
-	if(nx < 0 || nx >17 || ny < 0|| ny > 17){return;}
+	if(nx < 0 || nx >map_w-1 || ny < 0|| ny > map_h-1){return;} //TODO change from thing -1 to proper
 
 
 	map[nx][ny] &= ~(0b11 << dir*2);
@@ -62,11 +62,11 @@ void add_wall(int mapX, int mapY, int dir){
 
 
 void convertToMap(){
-	int mapX = x/18;
-	int mapY = y/18;
+	int mapX = x/map_w;
+	int mapY = y/map_h;
 
-	float localX = x%18;
-	float localY = y%18;
+	float localX = fmodf(x, 18.0f);
+	float localY = fmodf(y, 18.0f);
 
 	return;
 

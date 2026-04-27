@@ -1,70 +1,83 @@
 #include "Algorithm.h"
 #include "main.h"
 #include <string.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include "queue.h"
 
 // remember: add new funcs to h, any inputs are needed there too.
 
 
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 
-void Algorithm_init(void) // add things it should do when robot starts here, aka map setup
-{
 
+int flood[8][6]; // rows then columns this is the full map
+int goal[2] = {0,0};
+
+#define N 0b00000001
+#define S 0b00000100
+#define E 0b00010000
+#define W 0b01000000
+
+uint8_t direction[4] = {N, S, E, W};
+
+int dir_lookup[4][2]  = {{0,1},{0,-1},{1,0},{-1,0}};
+
+
+void flood_fill_calc(uint8_t map[map_w][map_h], int goal[2]){
+	// initialise flood map
+	for(int r = 0; r < map_w; r++){
+		for(int c = 0; c < map_h; c++){
+			flood[r][c] = -1;
+		}
+	}
+
+	// set goal
+	flood[goal[0]][goal[1]] = 0;
+
+	Queue queue;
+	Queue_init(&queue);
+
+	// append goal position
+	append(&queue, goal[0], goal[1]);
+
+	while (!isEmpty(&queue)){
+
+		Position current = pop(&queue);
+
+		int cx = current.x;
+		int cy = current.y;
+
+		int current_val = flood[cx][cy];
+		uint8_t current_walls = map[cx][cy];
+
+		for(int i = 0; i < 4; i++){
+
+			if (!(current_walls & direction[i])){
+
+				int *dir = dir_lookup[i];
+
+				int nx = cx + dir[0];
+				int ny = cy + dir[1];
+
+				// bounds check
+				if(nx >= 0 && nx < map_w && ny >= 0 && ny < map_h){
+
+					if(flood[nx][ny] == -1){
+						flood[nx][ny] = current_val + 1;
+						append(&queue, nx, ny);
+					}
+				}
+			}
+		}
+	}
 }
 
-void get_map(void) // outputs your map variable
-{
 
+void testing(){
+	//uint8_t map[map_w][map_h];
+	uint8_t map[map_w][map_h] = {0};
+	int goal[2] = {3,4};
+
+	flood_fill_calc(map, goal);
 }
-
-void add_wall(void) // called from elsewhere, adds a wall at a location to your map variable
-{
-
-}
-
-void remove_wall(void) // called from elsewhere, removes a wall at a location to your map variable
-{
-
-}
-
-void recalculate(void) // calculate the best path, output a list of moves : N N N E W W W S or smt 
-{
-
-}
-
-// for (int i= 0 ; i < 9;i++){
-// 	for (int j= 0 ; j < 7;j++){
-// 		maze[j][i] = 0;
-// 	}
-// }
-// for (int i= 0 ; i < 10;i++){
-// 	for (int j= 0 ; j < 8;j++){
-// 		walls[j][i] = 0;
-// 	}
-// }
-// // set goal end points
-// for (int i= 0 ; i < 8;i++){
-// 	for (int j= 0 ; j < 9;j++){
-// 	}
-// }
-
-// // Initialise maze
-// for (int r = 0; r < 6; r++)
-//     for (int c = 0; c < 8; c++)
-//         maze[r][c] = 0;
-// // Initialise walls
-// for (int r = 0; r < 7; r++)
-//     for (int c = 0; c < 9; c++)
-//         walls[r][c] = 0;
-// // Set maze values by distance from 2x2 goal (x=4-5, y=3-4)
-// for (int r = 0; r < 6; r++) {
-//     for (int c = 0; c < 8; c++) {
-//         // Distance to nearest edge of goal rectangle
-//         int dx = 0, dy = 0;
-//         if      (c < 4) dx = 4 - c;  // left of goal
-//         else if (c > 5) dx = c - 5;  // right of goal
-//         if      (r < 3) dy = 3 - r;  // above goal
-//         else if (r > 4) dy = r - 4;  // below goal
-//         maze[r][c] = (uint8_t)(dx + dy);
-//     }
-// }
