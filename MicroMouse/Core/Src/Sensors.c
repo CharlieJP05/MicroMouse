@@ -43,6 +43,9 @@ int32_t  positionR = 0;
 int32_t  positionL = 0;
 int32_t  rollover_counterR = 0;
 int32_t  rollover_counterL = 0;
+// PID variables
+float controlL = 0.0f;
+float controlR = 0.0f;
 // remember: add new funcs to h, any inputs are needed there too.
 void Sensors_init(void)
 {
@@ -187,6 +190,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		 float dt = 0.02f; // time between each time step is 20ms
 
 		 // target is not defined as of now as it should come from movement commands
+		 float targetL = 1000;
+		 float targetR = 1000;
 		 float errorL = targetL - velocityL;
 		 float errorR = targetR - velocityR;
 
@@ -197,6 +202,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 		 integralL += errorL * 0.02f;
 		 integralR += errorR * 0.02f;
+		 // clamp integral to prevent windup
+		 if (integralL >  100.0f) integralL =  100.0f;
+		 if (integralL < -100.0f) integralL = -100.0f;
+		 if (integralR >  100.0f) integralR =  100.0f;
+		 if (integralR < -100.0f) integralR = -100.0f;
 		 // adding D
 		 float Kd = 0.01f;
 
@@ -207,8 +217,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		 float derivativeR = (errorR - prev_errorR) / dt;
 		 prev_errorR = errorR;
 		 // final values
-		 float controlL = Kp * errorL + Ki * integralL + Kd * derivativeL;
-		 float controlR = Kp * errorR + Ki * integralR + Kd * derivativeR;
+		 controlL = Kp * errorL + Ki * integralL + Kd * derivativeL;
+		 controlR = Kp * errorR + Ki * integralR + Kd * derivativeR;
 
 	}
 
