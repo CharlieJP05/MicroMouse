@@ -31,7 +31,8 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#define map_w 8
+#define map_h 6
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -48,6 +49,8 @@ extern "C" {
 /* USER CODE BEGIN EM */
 
 /* USER CODE END EM */
+
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
@@ -109,8 +112,6 @@ void Error_Handler(void);
 #define SWITCH2_GPIO_Port GPIOA
 #define LED4_Pin GPIO_PIN_10
 #define LED4_GPIO_Port GPIOA
-#define US_ECHO_Pin GPIO_PIN_11
-#define US_ECHO_GPIO_Port GPIOA
 #define US_TRIG_Pin GPIO_PIN_12
 #define US_TRIG_GPIO_Port GPIOA
 #define TMS_Pin GPIO_PIN_13

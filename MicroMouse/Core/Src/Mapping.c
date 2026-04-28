@@ -3,6 +3,8 @@
 #include "IO.h"
 #include <math.h>
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 // remember: add new funcs to h, any inputs are needed there too.
 
 
@@ -13,10 +15,61 @@ static float x = 0;
 static float y = 0;
 static float theta = 0;
 
+extern uint8_t map[map_w][map_h];
+
+
+
+
 void Mapping_init()
 {
 
 }
+void add_wall(int mapX, int mapY, int dir){
+	int nx = mapX;
+	int ny = mapY;
+
+	int OpDir = dir ^ 2;
+
+	// set wall in current cell
+	map[mapX][mapY] &= ~(0b11 << (dir*2));
+	map[mapX][mapY] |=  (0b11 << (dir*2));
+
+	// move to neighbour (corrected for x,y with north positive)
+	switch(dir)
+	{
+	case 0: ny += 1; break; // N
+	case 1: nx += 1; break; // E
+	case 2: ny -= 1; break; // S
+	case 3: nx -= 1; break; // W
+	}
+
+	// bounds check
+	if(nx < 0 || nx >= map_w || ny < 0 || ny >= map_h){
+		return;
+	}
+
+	// set wall in neighbour (OPPOSITE direction)
+	map[nx][ny] &= ~(0b11 << (OpDir*2));
+	map[nx][ny] |=  (0b11 << (OpDir*2));
+}
+
+
+void convertToMap(){
+	int mapX = x/map_w;
+	int mapY = y/map_h;
+
+	float localX = fmodf(x, 18.0f);
+	float localY = fmodf(y, 18.0f);
+
+	return;
+
+}
+
+
+void biggerOne(){
+
+}
+
 
 void Enc_locate(int new_L, int new_R)
 {
@@ -39,7 +92,16 @@ void Enc_locate(int new_L, int new_R)
 	prev_R = new_R;
 }
 
-void LogXY() {
+float Mapping_GetX(void)
+{
+	return x;
+}
+
+float Mapping_GetY(void)
+{
+	return y;
+}
+void LogXY(void){
 	char buf[64];
 
 	int xi = (int)x;
@@ -58,8 +120,11 @@ void LogXY() {
 		"x: %d.%02d, y: %d.%02d, t: %d.%02d\r\n",
 		xi, xf, yi, yf, ti, tf);
 
-	Log(buf);
+	//Log(buf);
 }
+
+
+
 // possible functions:
 
 // get all distances
