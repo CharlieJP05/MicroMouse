@@ -7,21 +7,19 @@
 
 // remember: add new funcs to h, any inputs are needed there too.
 
-
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 
 
 int flood[8][6]; // rows then columns this is the full map
-int goal[2] = {0,0};
 
-#define N 0b00000001
-#define S 0b00000100
-#define E 0b00010000
-#define W 0b01000000
+#define N 0b00000011
+#define E 0b00001100
+#define S 0b00110000
+#define W 0b11000000
 
-uint8_t direction[4] = {N, S, E, W};
+uint8_t direction[4] = {N, E, S, W};
 
-int dir_lookup[4][2]  = {{0,1},{0,-1},{1,0},{-1,0}};
+int dir_lookup[4][2]  = {{0,1},{1,0},{0,-1},{-1,0}};
 
 
 void flood_fill_calc(uint8_t map[map_w][map_h], int goal[2]){
@@ -33,13 +31,20 @@ void flood_fill_calc(uint8_t map[map_w][map_h], int goal[2]){
 	}
 
 	// set goal
-	flood[goal[0]][goal[1]] = 0;
+	//flood[goal[0]][goal[1]] = 0;
+	flood[3][2] = 0;
+	flood[4][2] = 0;
+	flood[3][3] = 0;
+	flood[4][3] = 0;
 
 	Queue queue;
 	Queue_init(&queue);
 
 	// append goal position
-	append(&queue, goal[0], goal[1]);
+	append(&queue, 3, 2);
+	append(&queue, 4, 2);
+	append(&queue, 3, 3);
+	append(&queue, 4, 3);
 
 	while (!isEmpty(&queue)){
 
@@ -54,7 +59,7 @@ void flood_fill_calc(uint8_t map[map_w][map_h], int goal[2]){
 		for(int i = 0; i < 4; i++){
 
 			if (!(current_walls & direction[i])){
-
+			//if (current_walls >> (i*2)&0b11){
 				int *dir = dir_lookup[i];
 
 				int nx = cx + dir[0];
@@ -74,10 +79,9 @@ void flood_fill_calc(uint8_t map[map_w][map_h], int goal[2]){
 }
 
 
-void testing(){
+void testing(map){
 	//uint8_t map[map_w][map_h];
-	uint8_t map[map_w][map_h] = {0};
-	int goal[2] = {3,4};
+	int goal[2] = {3,2};
 
 	flood_fill_calc(map, goal);
 }

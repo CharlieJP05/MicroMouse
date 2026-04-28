@@ -24,40 +24,33 @@ void Mapping_init()
 {
 
 }
-
 void add_wall(int mapX, int mapY, int dir){
 	int nx = mapX;
 	int ny = mapY;
 
-	int OpDir = dir^2;
+	int OpDir = dir ^ 2;
 
-	map[mapX][mapY] &= ~(0b11 << dir*2);
-	map[mapX][mapY]|= (1 << dir* 2);
+	// set wall in current cell
+	map[mapX][mapY] &= ~(0b11 << (dir*2));
+	map[mapX][mapY] |=  (0b11 << (dir*2));
 
+	// move to neighbour (corrected for x,y with north positive)
 	switch(dir)
 	{
-	case 0:
-		nx+= 1;
-		return;
-	case 1:
-		ny += 1;
-		break;
-	case 2:
-		nx -= 1;
-		break;
-	case 3:
-		ny -= 1;
-		break;
-	default:
-		break;
+	case 0: ny += 1; break; // N
+	case 1: nx += 1; break; // E
+	case 2: ny -= 1; break; // S
+	case 3: nx -= 1; break; // W
 	}
 
-	if(nx < 0 || nx >map_w-1 || ny < 0|| ny > map_h-1){return;} //TODO change from thing -1 to proper
+	// bounds check
+	if(nx < 0 || nx >= map_w || ny < 0 || ny >= map_h){
+		return;
+	}
 
-
-	map[nx][ny] &= ~(0b11 << dir*2);
-	map[nx][ny]   |= (1 << dir* 2);
-
+	// set wall in neighbour (OPPOSITE direction)
+	map[nx][ny] &= ~(0b11 << (OpDir*2));
+	map[nx][ny] |=  (0b11 << (OpDir*2));
 }
 
 

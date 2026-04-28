@@ -58,6 +58,8 @@ int32_t rollover_counterR;
 float velocityL;
 int32_t positionL;
 int32_t rollover_counterL;
+
+uint8_t map[map_w][map_h];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -139,7 +141,43 @@ int main(void)
 //	  float x = Mapping_GetX();
 //	  float y = Mapping_GetY();
 //	  LogPos(x,y);
-	  testing();
+	  add_wall(0,0,1);
+	  add_wall(0,1,1);
+	  add_wall(0,2,1);
+	  add_wall(0,3,0);
+	  add_wall(0,4,1);
+
+	  add_wall(1,3,2);
+	  add_wall(1,3,1);
+	  add_wall(1,4,1);
+
+	  add_wall(2,0,1);
+	  add_wall(2,1,0);
+	  add_wall(2,1,1);
+	  add_wall(2,2,1);
+	  add_wall(2,4,1);
+	  add_wall(2,5,1);
+
+	  add_wall(3,1,0);
+	  add_wall(3,1,1);
+	  add_wall(3,3,0);
+	  add_wall(3,4,2);
+	  add_wall(3,4,0);
+
+	  add_wall(4,0,0);
+	  add_wall(4,2,1);
+	  add_wall(4,5,1);
+
+	  add_wall(5,1,1);
+	  add_wall(5,2,1);
+	  add_wall(5,2,0);
+
+	  add_wall(6,0,1);
+	  add_wall(6,1,1);
+	  add_wall(6,2,1);
+	  add_wall(6,2,0);
+
+	  testing(map);
 	  HAL_Delay(5000);
   }
   /* USER CODE END 3 */
