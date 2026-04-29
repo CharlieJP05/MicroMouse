@@ -25,6 +25,7 @@
 #include "Sensors.h"
 #include "IO.h"
 #include "Mapping.h"
+#include "queue.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -60,6 +61,7 @@ UART_HandleTypeDef huart2;
 
 
 uint8_t map[map_w][map_h];
+Queue path;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -156,7 +158,6 @@ int main(void)
 //	  float x = Mapping_GetX();
 //	  float y = Mapping_GetY();
 //	  LogPos(x,y);
-<<<<<<< Updated upstream
 //	  add_wall(0,0,1);
 //	  add_wall(0,1,1);
 //	  add_wall(0,2,1);
@@ -193,16 +194,10 @@ int main(void)
 //	  add_wall(6,2,1);
 //	  add_wall(6,2,0);
 	  locateWall();
-	  testing(map);
+	  path = getPath(vector {0,0});
+
+
 	  HAL_Delay(500);
-=======
-	  
-    locateWall();
-    flood_fill_calc(map,{0,0});
-    move();
-
-
->>>>>>> Stashed changes
   }
   /* USER CODE END 3 */
 }

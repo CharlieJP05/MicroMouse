@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include "queue.h"
-
+#include "Structs.h"
 int flood[map_w][map_h]; // flood variable stores the floodfill values for the whole map
 
 #define N 0b00000011
@@ -68,7 +68,30 @@ void flood_fill_calc(uint8_t map[map_w][map_h], int goal[2]){ // calculates the 
 				}
 			}
 		}
+		
+		
 	}
+	
+}
+
+Queue getPath(vector pos ){
+	Queue path;
+	path.append(pos);
+	
+	for(int i = 0; i < 4; i++){ // for each direction
+
+			if (!(current_walls & direction[i])){ // if no wall
+				int *dir = dir_lookup[i]; // get delta for this dir
+				if(flood[pos.x][pos.y] > flood[pos.x+dir][pos.y+dir]){
+					path.append(vector { pos.x+dir,pos.y+dir});
+
+				}
+	
+			}
+		}
+	return path;
+	
+
 }
 
 
