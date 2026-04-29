@@ -194,6 +194,8 @@ int main(void)
 //	  add_wall(6,2,1);
 //	  add_wall(6,2,0);
 	  locateWall();
+    flood_fill_calc(map,{0,0});
+    move();
 	  path = getPath(vector {0,0});
 
 

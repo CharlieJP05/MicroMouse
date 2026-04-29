@@ -74,25 +74,70 @@ void flood_fill_calc(uint8_t map[map_w][map_h], int goal[2]){ // calculates the 
 	
 }
 
-Queue getPath(vector pos ){
-	Queue path;
-	path.append(pos);
-	
-	for(int i = 0; i < 4; i++){ // for each direction
 
-			if (!(current_walls & direction[i])){ // if no wall
-				int *dir = dir_lookup[i]; // get delta for this dir
-				if(flood[pos.x][pos.y] > flood[pos.x+dir][pos.y+dir]){
-					path.append(vector { pos.x+dir,pos.y+dir});
+// Queue getPath(vector pos ){ //input current pos
+// 	Queue path;
 
-				}
-	
-			}
-		}
-	return path;
-	
+// 		while ((flood[pos.x][pos.y]) != 0){
+// 				path.append(pos);
+				
+// 				for(int i = 0; i < 4; i++){ // for each direction
 
+// 						if (!(current_walls & direction[i])){ // if no wall
+// 							int *dir = dir_lookup[i]; // get delta for this dir
+// 							if(flood[pos.x][pos.y] > flood[pos.x+dir][pos.y+dir]){
+// 								path.append(vector { pos.x+dir,pos.y+dir});
+
+// 							}
+				
+// 						}
+// 					}
+// 				return path;
+				
+// 				}
+// 		}
+
+
+Queue getPath(vector pos, uint8_t map[map_w][map_h]) {
+    Queue path;
+    Queue_init(&path);
+
+    while (flood[pos.x][pos.y] != 0) {
+
+        append(&path, pos.x, pos.y);
+
+        uint8_t current_walls = map[pos.x][pos.y];
+
+        int best_x = pos.x;
+        int best_y = pos.y;
+        int best_val = flood[pos.x][pos.y];
+
+        for (int i = 0; i < 4; i++) {
+
+            if (!(current_walls & direction[i])) {
+
+                int nx = pos.x + dir_lookup[i][0];
+                int ny = pos.y + dir_lookup[i][1];
+
+                if (nx >= 0 && nx < map_w && ny >= 0 && ny < map_h) {
+
+                    if (flood[nx][ny] < best_val) {
+                        best_val = flood[nx][ny];
+                        best_x = nx;
+                        best_y = ny;
+                    }
+                }
+            }
+        }
+
+        pos.x = best_x;
+        pos.y = best_y;
+    }
+
+    append(&path, pos.x, pos.y); // add goal (0 cell)
+    return path;
 }
+
 
 
 void testing(map){
