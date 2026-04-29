@@ -191,6 +191,7 @@ int main(void)
 //	  add_wall(6,1,1);
 //	  add_wall(6,2,1);
 //	  add_wall(6,2,0);
+	  Enc_locate(positionL,positionR);
 	  locateWall();
 	  testing(map);
 	  HAL_Delay(500);
@@ -537,9 +538,9 @@ static void MX_TIM6_Init(void)
 
   /* USER CODE END TIM6_Init 1 */
   htim6.Instance = TIM6;
-  htim6.Init.Prescaler = 0;
+  htim6.Init.Prescaler = 84-1;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = 65535;
+  htim6.Init.Period = 20000-1;
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
