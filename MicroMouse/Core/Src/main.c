@@ -25,6 +25,7 @@
 #include "Sensors.h"
 #include "IO.h"
 #include "Mapping.h"
+#include "queue.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -60,6 +61,7 @@ UART_HandleTypeDef huart2;
 
 
 uint8_t map[map_w][map_h];
+Queue path;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -139,7 +141,7 @@ int main(void)
   HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_3);
   HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);
-
+  Calabrate();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -193,7 +195,9 @@ int main(void)
 //	  add_wall(6,2,0);
 	  Enc_locate(positionL,positionR);
 	  locateWall();
-	  testing(map);
+	  path = getPath(vector {0,0});
+
+
 	  HAL_Delay(500);
   }
   /* USER CODE END 3 */
