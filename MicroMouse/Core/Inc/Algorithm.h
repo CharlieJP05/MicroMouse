@@ -1,13 +1,8 @@
 #ifndef ALGORITHM_H
 #define ALGORITHM_H
-
+#include "main.h"
 #include <stdint.h>
-
-void Algorithm_init(void); // add things it should do when robot starts here, aka map setup
-void get_map(void); // outputs your map variable
-void add_wall(void); // called from elsewhere, adds a wall at a location to your map variable
-void remove_wall(void); // called from elsewhere, removes a wall at a location to your map variable
-void recalculate(void); // calculate the best path, output a list of moves : N N N E W W W S or smt 
+void flood_fill_calc(uint8_t map[map_w][map_h], int goal[2]); // calculate the best path, output a list of moves : N N N E W W W S or smt
 
 
 #endif // ALGORITHM_H

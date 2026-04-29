@@ -57,6 +57,9 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 
+
+
+uint8_t map[map_w][map_h];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -126,16 +129,17 @@ int main(void)
   Sensors_init();
   Mapping_init();
   IO_init();
-  Algorithm_init();
+  //Algorithm_init();
   HAL_TIM_Base_Start_IT(&htim6);	// start timer6 to generate interrupt
   HAL_TIM_Encoder_Start(&htim2,TIM_CHANNEL_ALL);	// start the Quadrature encoder (timer 2)
   HAL_TIM_Encoder_Start(&htim3,TIM_CHANNEL_ALL);	// start the Quadrature encoder (timer 3)
   __HAL_TIM_CLEAR_FLAG(&htim3, TIM_FLAG_UPDATE);
   __HAL_TIM_ENABLE_IT(&htim3, TIM_IT_UPDATE);
-  HAL_TIM_PWM_Start(&htim8,  TIM_CHANNEL_3);
-  HAL_TIM_PWM_Start(&htim8,  TIM_CHANNEL_4);
-  HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_4);
+  HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_3);
   HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -148,7 +152,48 @@ int main(void)
 
 	  //distance = US_Read();
 	  //HAL_Delay(500);
-	  Enc_locate(positionL,positionR);
+//	  Enc_locate(positionL,positionR);
+//	  float x = Mapping_GetX();
+//	  float y = Mapping_GetY();
+//	  LogPos(x,y);
+	  add_wall(0,0,1);
+	  add_wall(0,1,1);
+	  add_wall(0,2,1);
+	  add_wall(0,3,0);
+	  add_wall(0,4,1);
+
+	  add_wall(1,3,2);
+	  add_wall(1,3,1);
+	  add_wall(1,4,1);
+
+	  add_wall(2,0,1);
+	  add_wall(2,1,0);
+	  add_wall(2,1,1);
+	  add_wall(2,2,1);
+	  add_wall(2,4,1);
+	  add_wall(2,5,1);
+
+	  add_wall(3,1,0);
+	  add_wall(3,1,1);
+	  add_wall(3,3,0);
+	  add_wall(3,4,2);
+	  add_wall(3,4,0);
+
+	  add_wall(4,0,0);
+	  add_wall(4,2,1);
+	  add_wall(4,5,1);
+
+	  add_wall(5,1,1);
+	  add_wall(5,2,1);
+	  add_wall(5,2,0);
+
+	  add_wall(6,0,1);
+	  add_wall(6,1,1);
+	  add_wall(6,2,1);
+	  add_wall(6,2,0);
+
+	  testing(map);
+	  HAL_Delay(5000);
   }
   /* USER CODE END 3 */
 }
@@ -330,8 +375,7 @@ static void MX_TIM2_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN TIM2_Init 2 */
-  __HAL_TIM_CLEAR_FLAG(&htim2, TIM_FLAG_UPDATE);
-  __HAL_TIM_ENABLE_IT(&htim2, TIM_IT_UPDATE);
+
   /* USER CODE END TIM2_Init 2 */
 
 }
@@ -451,7 +495,7 @@ static void MX_TIM5_Init(void)
   htim5.Instance = TIM5;
   htim5.Init.Prescaler = 84-1;
   htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim5.Init.Period = 0xFFFFFFFF;
+  htim5.Init.Period = 0xffffffff;
   htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim5) != HAL_OK)
@@ -493,9 +537,9 @@ static void MX_TIM6_Init(void)
 
   /* USER CODE END TIM6_Init 1 */
   htim6.Instance = TIM6;
-  htim6.Init.Prescaler = 84-1;
+  htim6.Init.Prescaler = 0;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = 20000-1;
+  htim6.Init.Period = 65535;
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
@@ -533,7 +577,7 @@ static void MX_TIM8_Init(void)
 
   /* USER CODE END TIM8_Init 1 */
   htim8.Instance = TIM8;
-  htim8.Init.Prescaler = 0;
+  htim8.Init.Prescaler = 84-1;
   htim8.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim8.Init.Period = 1000;
   htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -600,7 +644,7 @@ static void MX_TIM12_Init(void)
 
   /* USER CODE END TIM12_Init 1 */
   htim12.Instance = TIM12;
-  htim12.Init.Prescaler = 0;
+  htim12.Init.Prescaler = 84-1;
   htim12.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim12.Init.Period = 1000;
   htim12.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -745,11 +789,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(SWITCH2_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : US_ECHO_Pin */
-  GPIO_InitStruct.Pin = US_ECHO_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  HAL_GPIO_Init(US_ECHO_GPIO_Port, &GPIO_InitStruct);
+  /*Configure GPIO pin : PA11 */
+  GPIO_InitStruct.Pin = GPIO_PIN_11;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Alternate = GPIO_AF1_TIM1;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : BT_TX_Pin BT_RX_Pin */
   GPIO_InitStruct.Pin = BT_TX_Pin|BT_RX_Pin;
