@@ -48,6 +48,8 @@ float controlL = 0.0f;
 float controlR = 0.0f;
 static uint8_t pid_enabled = 0;
 static uint8_t startup_count = 0;
+static int32_t lastCNT_R = 0;
+static int32_t lastCNT_L = 0;
 // remember: add new funcs to h, any inputs are needed there too.
 void Sensors_init(void)
 {
@@ -173,29 +175,32 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 	if(htim == &htim6)
 	{
-		 // let a few samples settle before enabling PID
-		 if (startup_count < 10) {
-		     startup_count++;
-		     TIM8->CCR3 = 0;
-		     TIM8->CCR4 = 0;
-		     TIM12->CCR1 = 0;
-		     TIM12->CCR2 = 0;
-		     return;
-		 }
-		 positionR = htim2.Instance->CNT; // copy CNT into global variable
-		 // finds full amount of rotational ticks
-		 positionR = -(positionR + (rollover_counterR * 48));
+	    if (startup_count < 10) {
+	        startup_count++;
+	        TIM8->CCR3 = 0;
+	        TIM8->CCR4 = 0;
+	        TIM12->CCR1 = 0;
+	        TIM12->CCR2 = 0;
+	        return;
+	    }
 
-		 velocityR = (positionR - preposR) * 20; //calculates angular velocity
-		 preposR = positionR;	//stores current position in variable
+	    // Right motor - read CNT directly, cast handles wraparound
+	    int32_t cntR = -(int16_t)htim2.Instance->CNT;
+	    int32_t deltaR = cntR - lastCNT_R;
+	    if (deltaR >  (65535/2)) deltaR -= 65535;
+	    if (deltaR < -(65535/2)) deltaR += 65535;
+	    positionR += deltaR;
+	    lastCNT_R = cntR;
+	    velocityR = (float)deltaR * 20.0f;
 
-		 positionL = htim3.Instance->CNT; // copy CNT into global variable
-		 // finds full amount of rotational ticks
-		 positionL = positionL + (rollover_counterL * 48);
-
-		 velocityL = (positionL - preposL) * 20; //calculates angular velocity
-		 preposL = positionL;	//stores current position in variable
-
+	    // Left motor
+	    int32_t cntL = (int16_t)htim3.Instance->CNT;
+	    int32_t deltaL = cntL - lastCNT_L;
+	    if (deltaL >  (65535/2)) deltaL -= 65535;
+	    if (deltaL < -(65535/2)) deltaL += 65535;
+	    positionL += deltaL;
+	    lastCNT_L = cntL;
+	    velocityL = (float)deltaL * 20.0f;
 		 // PID controller (only encoders so far)
 		 // starting with simple P
 		 float dt = 0.02f; // time between each time step is 20ms
@@ -230,51 +235,53 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		 // final values
 		 controlL = Kp * errorL + Ki * integralL + Kd * derivativeL;
 		 controlR = Kp * errorR + Ki * integralR + Kd * derivativeR;
-
-		 if (controlL >= 0) {
-		     TIM8->CCR3 = (uint32_t)controlL;
-		     TIM8->CCR4 = 0;
-		 } else {
-		     TIM8->CCR3 = 0;
-		     TIM8->CCR4 = (uint32_t)(controlL);
-		 }
-
-		 if (controlR >= 0) {
-		     TIM12->CCR1 = (uint32_t)controlR;
-		     TIM12->CCR2 = 0;
-		 } else {
-		     TIM12->CCR1 = 0;
-		     TIM12->CCR2 = (uint32_t)(controlR);
-		 }
+//
+//		 if (controlL >= 0) {
+//		     TIM8->CCR3 = (uint32_t)controlL;
+//		     TIM8->CCR4 = 0;
+//		 } else {
+//		     TIM8->CCR3 = 0;
+//		     TIM8->CCR4 = (uint32_t)(controlL);
+//		 }
+//
+//		 if (controlR >= 0) {
+//		     TIM12->CCR1 = (uint32_t)controlR;
+//		     TIM12->CCR2 = 0;
+//		 } else {
+//		     TIM12->CCR1 = 0;
+//		     TIM12->CCR2 = (uint32_t)(controlR);
+//		 }
 
 
 
 	}
 
-	if(htim == &htim2)
-	{
-		if(htim2.Instance->CNT < 24) // if CNT is less than half of ARR (48)
-		{
-			rollover_counterR +=1;	// increment counter
-		}
-		if(htim2.Instance->CNT > 24) // if CNT is more than half of ARR (48)
-		{
-			rollover_counterR -=1;	// decrement counter
-		}
-		positionR = -(htim2.Instance->CNT + (rollover_counterR * 48));	// absolute position calculated
-	}
-	if(htim == &htim3)
-	{
-		if(htim3.Instance->CNT < 24) // if CNT is less than half of ARR (48)
-		{
-			rollover_counterL +=1;	// increment counter
-		}
-		if(htim3.Instance->CNT > 24) // if CNT is more than half of ARR (48)
-		{
-			rollover_counterL -=1;	// decrement counter
-		}
-		positionL = htim3.Instance->CNT + (rollover_counterL * 48);	// absolute position calculated
-	}
+//	if(htim == &htim2)
+//	{
+//
+//		int32_t cntR = htim2.Instance->CNT;
+//	    int32_t deltaR = cntR - lastCNT_R;
+//	    // handle wraparound (48 counts total)
+//	    if(deltaR > 24)  deltaR -= 48;
+//	    if(deltaR < -24) deltaR += 48;
+//
+//	    positionR += deltaR;
+//	    lastCNT_R = cntR;
+//	}
+//	if(htim == &htim3)
+//	{
+//
+//		int32_t cntL = htim3.Instance->CNT;
+//	    int32_t deltaL = cntL - lastCNT_L;
+//	    // handle wraparound (48 counts total)
+//	    if(deltaL > 24)  deltaL -= 48;
+//	    if(deltaL < -24) deltaL += 48;
+//
+//	    positionL += deltaL;
+//	    lastCNT_L = cntL;
+//	}
+
+
 
 }
 
