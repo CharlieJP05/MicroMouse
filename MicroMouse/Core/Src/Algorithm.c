@@ -74,68 +74,57 @@ void flood_fill_calc(uint8_t map[map_w][map_h], int goal[2]){ // calculates the 
 	
 }
 
+Queue getPath(Position start, uint8_t map[map_w][map_h])
+{
+	Queue path;
+	Queue_init(&path);
 
-// Queue getPath(vector pos ){ //input current pos
-// 	Queue path;
+	int cx = start.x;
+	int cy = start.y;
 
-// 		while ((flood[pos.x][pos.y]) != 0){
-// 				path.append(pos);
-				
-// 				for(int i = 0; i < 4; i++){ // for each direction
+	append(&path, cx, cy);
 
-// 						if (!(current_walls & direction[i])){ // if no wall
-// 							int *dir = dir_lookup[i]; // get delta for this dir
-// 							if(flood[pos.x][pos.y] > flood[pos.x+dir][pos.y+dir]){
-// 								path.append(vector { pos.x+dir,pos.y+dir});
+	while (flood[cx][cy] != 0)   // until goal
+	{
+		uint8_t walls = map[cx][cy];
 
-// 							}
-				
-// 						}
-// 					}
-// 				return path;
-				
-// 				}
-// 		}
+		int best_x = cx;
+		int best_y = cy;
+		int best_val = flood[cx][cy];
 
+		for (int i = 0; i < 4; i++)
+		{
+			// check wall
+			if (walls & (1 << (i*2))) continue;
 
-Queue getPath(vector pos, uint8_t map[map_w][map_h]) {
-    Queue path;
-    Queue_init(&path);
+			int nx = cx + dir_lookup[i][0];
+			int ny = cy + dir_lookup[i][1];
 
-    while (flood[pos.x][pos.y] != 0) {
+			// bounds check
+			if (nx < 0 || nx >= map_w || ny < 0 || ny >= map_h)
+				continue;
 
-        append(&path, pos.x, pos.y);
+			int val = flood[nx][ny];
 
-        uint8_t current_walls = map[pos.x][pos.y];
+			if (val < best_val)
+			{
+				best_val = val;
+				best_x = nx;
+				best_y = ny;
+			}
+		}
 
-        int best_x = pos.x;
-        int best_y = pos.y;
-        int best_val = flood[pos.x][pos.y];
+		// no progress → stuck
+		if (best_x == cx && best_y == cy)
+			break;
 
-        for (int i = 0; i < 4; i++) {
+		cx = best_x;
+		cy = best_y;
 
-            if (!(current_walls & direction[i])) {
+		append(&path, cx, cy);
+	}
 
-                int nx = pos.x + dir_lookup[i][0];
-                int ny = pos.y + dir_lookup[i][1];
-
-                if (nx >= 0 && nx < map_w && ny >= 0 && ny < map_h) {
-
-                    if (flood[nx][ny] < best_val) {
-                        best_val = flood[nx][ny];
-                        best_x = nx;
-                        best_y = ny;
-                    }
-                }
-            }
-        }
-
-        pos.x = best_x;
-        pos.y = best_y;
-    }
-
-    append(&path, pos.x, pos.y); // add goal (0 cell)
-    return path;
+	return path;
 }
 
 
