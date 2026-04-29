@@ -5,7 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "StructsUwU.h"
+#include <Structs.h>
 // remember: add new funcs to h, any inputs are needed there too.
 
 

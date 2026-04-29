@@ -1,8 +1,8 @@
 #ifndef MAPPING_H
 #define MAPPING_H
+#include <Structs.h>
 #include "main.h"
 #include "Sensors.h"
-#include "StructsUwU.h"
 
 void Mapping_init(void);
 void Enc_locate(int new_L, int new_R);
