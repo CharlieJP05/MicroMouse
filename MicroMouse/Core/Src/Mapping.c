@@ -8,6 +8,10 @@
 #include <Structs.h>
 // remember: add new funcs to h, any inputs are needed there too.
 
+#define NORTH 0
+#define EAST 1
+#define SOUTH 2
+#define WEST 3
 
 static int prev_L = 0;
 static int prev_R = 0;
@@ -17,10 +21,10 @@ static float y = 0;
 static float theta = 0;
 
 extern uint8_t map[map_w][map_h];
-vector vectorSensUs  = {x = 1,y = 1};
+vector vectorSensUs  = {x = 0,y = 50};
 vector vectorSensIR = {x=1,y=1};
-
-
+float wallLength = 16.5;
+float gap = 1.2;
 
 
 void Mapping_init()
@@ -134,15 +138,43 @@ vector vecRoate(float x, float y,float theta){
 
 }
 
-void CalcLength(float theta,vector distance){
+vector CalcLength(float theta,vector distance,vector sensPos){
 
-	vector target = {x = (vectorSens.x + distance.x),y = (vectorSens.y + distance.y)};
+	vector target = {x = (sensPos.x + distance.x),y = (sensPos.y + distance.y)};
 	
 
 	vector roate = {x = vecRoate(targe.x,target.y,theta ).x ,y = vecRoate(targe.x,target.y,theta).y};
 
 	vec.x = x+roate.x;
 	vec.y = y+roate.y;
+	return vec;
+}
+
+void locateWall(){
+	float distance =  US_Read();
+
+	Vector dis = {x = 0 , y = distance};
+	dis = CalcLength(theta, dis);
+
+	int xDiv = dis.x / 18.f;
+	int yDiv = dis.y / 18.f;
+
+	int xMod =fmodf( dis.x % 18.f);
+	int yMod =fmodf( dis.y % 18.f);
+	
+
+	if(yMod > xMod){
+		add_wall(x,y,SOUTH);
+	}
+	else{
+		add_wall(x,y,EAST);
+	}
+
+	
+
+	
+
+
 }
 
 // possible functions:
