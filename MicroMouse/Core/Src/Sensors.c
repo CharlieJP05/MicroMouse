@@ -190,8 +190,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		 float dt = 0.02f; // time between each time step is 20ms
 
 		 // target is not defined as of now as it should come from movement commands
-		 float targetL = 1000;
-		 float targetR = 1000;
+		 float targetL = 500;
+		 float targetR = 500;
 		 float errorL = targetL - velocityL;
 		 float errorR = targetR - velocityR;
 
@@ -203,10 +203,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		 integralL += errorL * 0.02f;
 		 integralR += errorR * 0.02f;
 		 // clamp integral to prevent windup
-		 if (integralL >  100.0f) integralL =  100.0f;
-		 if (integralL < -100.0f) integralL = -100.0f;
-		 if (integralR >  100.0f) integralR =  100.0f;
-		 if (integralR < -100.0f) integralR = -100.0f;
+		 if (integralL >  1000.0f) integralL =  1000.0f;
+		 if (integralL < -1000.0f) integralL = -1000.0f;
+		 if (integralR >  1000.0f) integralR =  1000.0f;
+		 if (integralR < -1000.0f) integralR = -1000.0f;
 		 // adding D
 		 float Kd = 0.01f;
 
@@ -219,6 +219,22 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		 // final values
 		 controlL = Kp * errorL + Ki * integralL + Kd * derivativeL;
 		 controlR = Kp * errorR + Ki * integralR + Kd * derivativeR;
+
+		 if (controlL >= 0) {
+		     TIM8->CCR3 = (uint32_t)controlL;
+		     TIM8->CCR4 = 0;
+		 } else {
+		     TIM8->CCR3 = 0;
+		     TIM8->CCR4 = (uint32_t)(-controlL);
+		 }
+
+		 if (controlR >= 0) {
+		     TIM12->CCR1 = (uint32_t)controlR;
+		     TIM12->CCR2 = 0;
+		 } else {
+		     TIM12->CCR1 = 0;
+		     TIM12->CCR2 = (uint32_t)(-controlR);
+		 }
 
 	}
 
@@ -246,6 +262,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		}
 		positionL = htim3.Instance->CNT + (rollover_counterL * 48);	// absolute position calculated
 	}
+
 }
 
 void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
