@@ -46,6 +46,8 @@ int32_t  rollover_counterL = 0;
 // PID variables
 float controlL = 0.0f;
 float controlR = 0.0f;
+static uint8_t pid_enabled = 0;
+static uint8_t startup_count = 0;
 // remember: add new funcs to h, any inputs are needed there too.
 void Sensors_init(void)
 {
@@ -171,6 +173,15 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 	if(htim == &htim6)
 	{
+		 // let a few samples settle before enabling PID
+		 if (startup_count < 10) {
+		     startup_count++;
+		     TIM8->CCR3 = 0;
+		     TIM8->CCR4 = 0;
+		     TIM12->CCR1 = 0;
+		     TIM12->CCR2 = 0;
+		     return;
+		 }
 		 positionR = htim2.Instance->CNT; // copy CNT into global variable
 		 // finds full amount of rotational ticks
 		 positionR = -(positionR + (rollover_counterR * 48));
@@ -190,8 +201,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		 float dt = 0.02f; // time between each time step is 20ms
 
 		 // target is not defined as of now as it should come from movement commands
-		 float targetL = 500;
-		 float targetR = 500;
+		 float targetL = 100;
+		 float targetR = 100;
 		 float errorL = targetL - velocityL;
 		 float errorR = targetR - velocityR;
 
@@ -225,7 +236,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		     TIM8->CCR4 = 0;
 		 } else {
 		     TIM8->CCR3 = 0;
-		     TIM8->CCR4 = (uint32_t)(-controlL);
+		     TIM8->CCR4 = (uint32_t)(controlL);
 		 }
 
 		 if (controlR >= 0) {
@@ -233,8 +244,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		     TIM12->CCR2 = 0;
 		 } else {
 		     TIM12->CCR1 = 0;
-		     TIM12->CCR2 = (uint32_t)(-controlR);
+		     TIM12->CCR2 = (uint32_t)(controlR);
 		 }
+
+
 
 	}
 
