@@ -93,8 +93,7 @@ void Enc_locate(int new_L, int new_R)
 
 	float dL = 42.0f * ((float)delta_theta_L / 2000.0f) * 2.0f * M_PI;
 	float dR = 42.0f * ((float)delta_theta_R / 2000.0f) * 2.0f * M_PI;
-
-	float d = (dL + dR) / 2.0f;
+	float d = (dL + dR) / 40.0f;
 	float dtheta = ((dR - dL) / 80.0f) * (2.0f * M_PI / 13.0f);
 
 	x += d * cos(theta + dtheta / 2.0f);
