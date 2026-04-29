@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "StructsUwU.h"
 // remember: add new funcs to h, any inputs are needed there too.
 
 
@@ -123,7 +124,17 @@ void LogXY(void){
 	//Log(buf);
 }
 
+void vecRoate(x,y,theta){
+	int newx = x*cos(theta)-y*sin(theta);
+	int newy = x*sin(theta)-y*cos(theta);
 
+	Str
+}
+
+void CalcLength(float rotaion,float distance){
+	return (distance*sin(rotaion))
+
+}
 
 // possible functions:
 

@@ -2,6 +2,7 @@
 #define MAPPING_H
 #include "main.h"
 #include "Sensors.h"
+#include "StructsUwU.h"
 
 void Mapping_init(void);
 void Enc_locate(int new_L, int new_R);
