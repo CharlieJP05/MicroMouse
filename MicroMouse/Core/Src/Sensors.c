@@ -46,6 +46,10 @@ int32_t  rollover_counterL = 0;
 // PID variables
 float controlL = 0.0f;
 float controlR = 0.0f;
+static uint8_t pid_enabled = 0;
+static uint8_t startup_count = 0;
+static int32_t lastCNT_R = 0;
+static int32_t lastCNT_L = 0;
 // remember: add new funcs to h, any inputs are needed there too.
 void Sensors_init(void)
 {
