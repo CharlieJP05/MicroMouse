@@ -26,7 +26,7 @@
 #include "IO.h"
 #include "Mapping.h"
 #include "queue.h"
-/* USER CODE END Includes */
+#include "Structs.h"/* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
@@ -61,7 +61,7 @@ UART_HandleTypeDef huart2;
 
 
 uint8_t map[map_w][map_h];
-Queue path;
+static int path;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -195,7 +195,24 @@ int main(void)
 //	  add_wall(6,2,0);
 	  Enc_locate(positionL,positionR);
 	  locateWall();
-	  path = getPath(vector {0,0});
+
+/*
+
+	  Queue path;
+	  Queue_init(&path);
+	  append(&path,pos.x,pos.y);
+	  */
+
+		//uint8_t map[map_w][map_h];
+		int goal[2] = {3,2};
+
+		flood_fill_calc(map, goal);
+
+		Position pos;
+		pos.x = 0;
+		pos.y = 0;
+
+		path = getPath(pos,map);
 
 
 	  HAL_Delay(500);

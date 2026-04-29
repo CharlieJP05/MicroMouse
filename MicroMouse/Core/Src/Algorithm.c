@@ -74,24 +74,57 @@ void flood_fill_calc(uint8_t map[map_w][map_h], int goal[2]){ // calculates the 
 	
 }
 
-Queue getPath(vector pos ){
+Queue getPath(Position start, uint8_t map[map_w][map_h])
+{
 	Queue path;
-	path.append(pos);
-	
-	for(int i = 0; i < 4; i++){ // for each direction
+	Queue_init(&path);
 
-			if (!(current_walls & direction[i])){ // if no wall
-				int *dir = dir_lookup[i]; // get delta for this dir
-				if(flood[pos.x][pos.y] > flood[pos.x+dir][pos.y+dir]){
-					path.append(vector { pos.x+dir,pos.y+dir});
+	int cx = start.x;
+	int cy = start.y;
 
-				}
-	
+	append(&path, cx, cy);
+
+	while (flood[cx][cy] != 0)   // until goal
+	{
+		uint8_t walls = map[cx][cy];
+
+		int best_x = cx;
+		int best_y = cy;
+		int best_val = flood[cx][cy];
+
+		for (int i = 0; i < 4; i++)
+		{
+			// check wall
+			if (walls & (1 << (i*2))) continue;
+
+			int nx = cx + dir_lookup[i][0];
+			int ny = cy + dir_lookup[i][1];
+
+			// bounds check
+			if (nx < 0 || nx >= map_w || ny < 0 || ny >= map_h)
+				continue;
+
+			int val = flood[nx][ny];
+
+			if (val < best_val)
+			{
+				best_val = val;
+				best_x = nx;
+				best_y = ny;
 			}
 		}
-	return path;
-	
 
+		// no progress → stuck
+		if (best_x == cx && best_y == cy)
+			break;
+
+		cx = best_x;
+		cy = best_y;
+
+		append(&path, cx, cy);
+	}
+
+	return path;
 }
 
 
