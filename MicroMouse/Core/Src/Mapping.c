@@ -17,6 +17,8 @@ static float y = 0;
 static float theta = 0;
 
 extern uint8_t map[map_w][map_h];
+vector vectorSensUs  = {x = 1,y = 1};
+vector vectorSensIR = {x=1,y=1};
 
 
 
@@ -124,16 +126,23 @@ void LogXY(void){
 	//Log(buf);
 }
 
-void vecRoate(x,y,theta){
+vector vecRoate(float x, float y,float theta){
+	vector vec; 
 	int newx = x*cos(theta)-y*sin(theta);
 	int newy = x*sin(theta)-y*cos(theta);
 
-	Str
+
 }
 
-void CalcLength(float rotaion,float distance){
-	return (distance*sin(rotaion))
+void CalcLength(float theta,vector distance){
 
+	vector target = {x = (vectorSens.x + distance.x),y = (vectorSens.y + distance.y)};
+	
+
+	vector roate = {x = vecRoate(targe.x,target.y,theta ).x ,y = vecRoate(targe.x,target.y,theta).y};
+
+	vec.x = x+roate.x;
+	vec.y = y+roate.y;
 }
 
 // possible functions:
