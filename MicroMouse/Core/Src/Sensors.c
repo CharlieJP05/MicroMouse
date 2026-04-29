@@ -160,93 +160,55 @@ void ENC_Read(void) // TODO: implement
 //  HAL callbacks  (only one definition allowed per project)
 // ═══════════════════════════════════════════════════════════
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-	static int32_t preposR;
-	static int32_t preposL;
-	float Kp = 1.0f;
-
-    if (htim == &htim4)
-        HAL_I2C_Mem_Read_DMA(&hi2c1, LSM6DSO_ADDRESS, OUT_TEMP_L,
-                              I2C_MEMADD_SIZE_8BIT, i2c_buffer, SIZE_I2C_BUFFER);
-
-	if(htim == &htim6)
 	{
-		 positionR = htim2.Instance->CNT; // copy CNT into global variable
-		 // finds full amount of rotational ticks
-		 positionR = -(positionR + (rollover_counterR * 48));
 
-		 velocityR = (positionR - preposR) * 20; //calculates angular velocity
-		 preposR = positionR;	//stores current position in variable
+		static int32_t preposR;
+		static int32_t preposL;
 
-		 positionL = htim3.Instance->CNT; // copy CNT into global variable
-		 // finds full amount of rotational ticks
-		 positionL = positionL + (rollover_counterL * 48);
+		if(htim == &htim6)
+		{
+			 positionR = htim2.Instance->CNT; // copy CNT into global variable
+			 // finds full amount of rotational ticks
+			 positionR = -(positionR + (rollover_counterR * 48));
 
-		 velocityL = (positionL - preposL) * 20; //calculates angular velocity
-		 preposL = positionL;	//stores current position in variable
+			 velocityR = (positionR - preposR) * 20; //calculates angular velocity
+			 preposR = positionR;	//stores current position in variable
 
-		 // PID controller (only encoders so far)
-		 // starting with simple P
-		 float dt = 0.02f; // time between each time step is 20ms
+			 positionL = htim3.Instance->CNT; // copy CNT into global variable
+			 // finds full amount of rotational ticks
+			 positionL = positionL + (rollover_counterL * 48);
 
-		 // target is not defined as of now as it should come from movement commands
-		 float targetL = 1000;
-		 float targetR = 1000;
-		 float errorL = targetL - velocityL;
-		 float errorR = targetR - velocityR;
+			 velocityL = (positionL - preposL) * 20; //calculates angular velocity
+			 preposL = positionL;	//stores current position in variable
 
-		 static float integralL = 0;
-		 static float integralR = 0;
-		 // adding I
-		 float Ki = 0.1f;
+		}
 
-		 integralL += errorL * 0.02f;
-		 integralR += errorR * 0.02f;
-		 // clamp integral to prevent windup
-		 if (integralL >  100.0f) integralL =  100.0f;
-		 if (integralL < -100.0f) integralL = -100.0f;
-		 if (integralR >  100.0f) integralR =  100.0f;
-		 if (integralR < -100.0f) integralR = -100.0f;
-		 // adding D
-		 float Kd = 0.01f;
-
-		 static float prev_errorL = 0;
-		 float derivativeL = (errorL - prev_errorL) / dt;
-		 prev_errorL = errorL;
-		 static float prev_errorR = 0;
-		 float derivativeR = (errorR - prev_errorR) / dt;
-		 prev_errorR = errorR;
-		 // final values
-		 controlL = Kp * errorL + Ki * integralL + Kd * derivativeL;
-		 controlR = Kp * errorR + Ki * integralR + Kd * derivativeR;
-
+		if(htim == &htim2)
+		{
+			if(htim2.Instance->CNT < 24) // if CNT is less than half of ARR (48)
+			{
+				rollover_counterR +=1;	// increment counter
+			}
+			if(htim2.Instance->CNT > 24) // if CNT is more than half of ARR (48)
+			{
+				rollover_counterR -=1;	// decrement counter
+			}
+			positionR = -(htim2.Instance->CNT + (rollover_counterR * 48));	// absolute position calculated
+		}
+		if(htim == &htim3)
+		{
+			if(htim3.Instance->CNT < 24) // if CNT is less than half of ARR (48)
+			{
+				rollover_counterL +=1;	// increment counter
+			}
+			if(htim3.Instance->CNT > 24) // if CNT is more than half of ARR (48)
+			{
+				rollover_counterL -=1;	// decrement counter
+			}
+			positionL = htim3.Instance->CNT + (rollover_counterL * 48);	// absolute position calculated
+		}
 	}
 
-	if(htim == &htim2)
-	{
-		if(htim2.Instance->CNT < 24) // if CNT is less than half of ARR (48)
-		{
-			rollover_counterR +=1;	// increment counter
-		}
-		if(htim2.Instance->CNT > 24) // if CNT is more than half of ARR (48)
-		{
-			rollover_counterR -=1;	// decrement counter
-		}
-		positionR = -(htim2.Instance->CNT + (rollover_counterR * 48));	// absolute position calculated
-	}
-	if(htim == &htim3)
-	{
-		if(htim3.Instance->CNT < 24) // if CNT is less than half of ARR (48)
-		{
-			rollover_counterL +=1;	// increment counter
-		}
-		if(htim3.Instance->CNT > 24) // if CNT is more than half of ARR (48)
-		{
-			rollover_counterL -=1;	// decrement counter
-		}
-		positionL = htim3.Instance->CNT + (rollover_counterL * 48);	// absolute position calculated
-	}
-}
 
 void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
@@ -254,3 +216,69 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 }
 
 
+
+
+
+
+//void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+//{
+//	static int32_t preposR;
+//	static int32_t preposL;
+//	float Kp = 1.0f;
+//
+//    if (htim == &htim4)
+//        HAL_I2C_Mem_Read_DMA(&hi2c1, LSM6DSO_ADDRESS, OUT_TEMP_L,
+//                              I2C_MEMADD_SIZE_8BIT, i2c_buffer, SIZE_I2C_BUFFER);
+//
+//	if(0)//htim == &htim6)
+//	{
+//		 positionR = htim2.Instance->CNT; // copy CNT into global variable
+//		 // finds full amount of rotational ticks
+//		 positionR = -(positionR + (rollover_counterR * 48));
+//
+//		 velocityR = (positionR - preposR) * 20; //calculates angular velocity
+//		 preposR = positionR;	//stores current position in variable
+//
+//		 positionL = htim3.Instance->CNT; // copy CNT into global variable
+//		 // finds full amount of rotational ticks
+//		 positionL = positionL + (rollover_counterL * 48);
+//
+//		 velocityL = (positionL - preposL) * 20; //calculates angular velocity
+//		 preposL = positionL;	//stores current position in variable
+//
+//		 // PID controller (only encoders so far)
+//		 // starting with simple P
+//		 float dt = 0.02f; // time between each time step is 20ms
+//
+//		 // target is not defined as of now as it should come from movement commands
+//		 float targetL = 1000;
+//		 float targetR = 1000;
+//		 float errorL = targetL - velocityL;
+//		 float errorR = targetR - velocityR;
+//
+//		 static float integralL = 0;
+//		 static float integralR = 0;
+//		 // adding I
+//		 float Ki = 0.1f;
+//
+//		 integralL += errorL * 0.02f;
+//		 integralR += errorR * 0.02f;
+//		 // clamp integral to prevent windup
+//		 if (integralL >  100.0f) integralL =  100.0f;
+//		 if (integralL < -100.0f) integralL = -100.0f;
+//		 if (integralR >  100.0f) integralR =  100.0f;
+//		 if (integralR < -100.0f) integralR = -100.0f;
+//		 // adding D
+//		 float Kd = 0.01f;
+//
+//		 static float prev_errorL = 0;
+//		 float derivativeL = (errorL - prev_errorL) / dt;
+//		 prev_errorL = errorL;
+//		 static float prev_errorR = 0;
+//		 float derivativeR = (errorR - prev_errorR) / dt;
+//		 prev_errorR = errorR;
+//		 // final values
+//		 controlL = Kp * errorL + Ki * integralL + Kd * derivativeL;
+//		 controlR = Kp * errorR + Ki * integralR + Kd * derivativeR;
+//
+//	}
