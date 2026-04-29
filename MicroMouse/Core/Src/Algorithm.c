@@ -78,3 +78,6 @@ void testing(map){
 
 	flood_fill_calc(map, goal);
 }
+
+
+void Calabrate(){}

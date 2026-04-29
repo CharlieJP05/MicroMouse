@@ -1,8 +1,8 @@
 #include "Structs.h"
 
-struct vector
+typedef struct  
 {
     float x;
     float y;
-};
+}vector;
 

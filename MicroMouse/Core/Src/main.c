@@ -139,7 +139,7 @@ int main(void)
   HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_3);
   HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);
-
+  Calabrate();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -156,6 +156,7 @@ int main(void)
 //	  float x = Mapping_GetX();
 //	  float y = Mapping_GetY();
 //	  LogPos(x,y);
+<<<<<<< Updated upstream
 //	  add_wall(0,0,1);
 //	  add_wall(0,1,1);
 //	  add_wall(0,2,1);
@@ -194,6 +195,14 @@ int main(void)
 	  locateWall();
 	  testing(map);
 	  HAL_Delay(500);
+=======
+	  
+    locateWall();
+    flood_fill_calc(map,{0,0});
+    move();
+
+
+>>>>>>> Stashed changes
   }
   /* USER CODE END 3 */
 }
