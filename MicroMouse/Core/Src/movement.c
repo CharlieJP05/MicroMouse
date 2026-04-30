@@ -34,7 +34,7 @@ int turn_move(Queue path){
     	NewHeading = SOUTH;
 
     }
-
+    int CurrentHeading = 0;
     int diff = NewHeading - CurrentHeading;
 
        // Wrap values to range -3 to 3

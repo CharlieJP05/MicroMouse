@@ -146,6 +146,7 @@ int main(void)
   HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);
   //Calabrate();
   uint8_t map[map_w][map_h];
+  int goal[2] = {3,2};
 
   Queue turnList;
   Queue moveList;
@@ -160,7 +161,6 @@ int main(void)
 
   while (1)
   {
-	  h += 1;
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -172,23 +172,14 @@ int main(void)
 //	  LogPos(x,y);
 	  theta = Enc_locate(positionL,positionR);
 	  locateWall();
-
-/*
-	  Queue path;
-	  Queue_init(&path);
-	  append(&path,pos.x,pos.y);*/
-
-	  int goal[2] = {3,2};
 	  flood_fill_calc(map, goal);
-
 	  vector target = {2,2};
 	  int turnAngle = 90;
+	  turn(90);
+	  //int done = update(positionR, positionL, theta,target,turnAngle);
+	  //if( done == 1){
 
-
-	  int done = update(positionR, positionL, theta,target,turnAngle);
-	  if( done == 1){
-
-	  }
+	  //}
 		Position pos;
 		pos.x = 0;
 		pos.y = 0;
