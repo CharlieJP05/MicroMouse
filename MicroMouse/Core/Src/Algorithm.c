@@ -88,16 +88,19 @@ Queue getPath(Position start, uint8_t map[map_w][map_h])
 
 	while (flood[cx][cy] != 0)   // until goal
 	{
-		uint8_t walls = map[cx][cy];
+		uint8_t current_walls = map[cx][cy];
 
 
 
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < 4; i++)//for every direction
 		{
 			// check wall
-			if (walls & direction[i]) continue;
-				int nx = cx + dir_lookup[i][0];
-				int ny = cy + dir_lookup[i][1];
+			if (!(current_walls & direction[i])){ //if no wall in direction
+
+				int *dir = dir_lookup[i]; // get delta for this dir
+				int nx = cx + dir[0]; // get new positions
+				int ny = cy + dir[1];
+
 				if (nx >= 0 && nx < map_w && ny >= 0 && ny < map_h){
 					if (flood[cx][cy] > flood[nx][ny]){
 						append(&path, nx, ny);
@@ -110,7 +113,7 @@ Queue getPath(Position start, uint8_t map[map_w][map_h])
 		}
 
 
-	}
+	}}
 
 	return path;
 }
