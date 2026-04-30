@@ -39,8 +39,28 @@ void update()
 
 }
 
-void move(float amount)
+void TIM12Move(float amount)
 {
+
+	if(amount > 0 ){
+		TIM12->CCR1 = abs(amount);
+	}
+	if(amount < 0 ){
+		TIM12->CCR2 = abs(amount);
+	}
+
+
+}
+void TIM8Move(float amount)
+{
+
+	if(amount > 0 ){
+		TIM8->CCR3 = abs(amount);
+	}
+	if(amount < 0 ){
+		TIM8->CCR4 = abs(amount);
+	}
+
 
 }
 
@@ -52,7 +72,7 @@ void turn(float amount)
 
 DT_out get_dt(float last_time)
 {
-	uint32_t now = __HAL_TIM_GET_COUNTER(&htim7);
+	uint32_t now = __HAL_TIM_GET_COUNTER(&htim5);
 
 	uint32_t delta_us = (now >= last_time)
 						? (now - last_time)
