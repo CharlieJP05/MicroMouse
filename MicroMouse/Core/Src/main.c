@@ -62,7 +62,7 @@ UART_HandleTypeDef huart2;
 
 
 uint8_t map[map_w][map_h];
-static int path;
+static Queue path;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/

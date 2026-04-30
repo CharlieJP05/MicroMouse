@@ -81,7 +81,10 @@ Queue getPath(Position start, uint8_t map[map_w][map_h])
 
 	int cx = start.x;
 	int cy = start.y;
-
+	if (flood[cx][cy] == -1)
+	{
+		return path;
+	}
 	append(&path, cx, cy);
 
 	while (flood[cx][cy] != 0)   // until goal
@@ -95,7 +98,7 @@ Queue getPath(Position start, uint8_t map[map_w][map_h])
 		for (int i = 0; i < 4; i++)
 		{
 			// check wall
-			if (walls & (1 << (i*2))) continue;
+			if (walls & direction[i]) continue;
 
 			int nx = cx + dir_lookup[i][0];
 			int ny = cy + dir_lookup[i][1];
