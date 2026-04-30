@@ -45,3 +45,12 @@ Position pop(Queue *q) {
 
 	return item;
 }
+Position peek(Queue *q) {
+	Position empty = {0, 0};
+
+	if (isEmpty(q)) {
+		return empty;
+	}
+
+	return q->arr[q->front];
+}
