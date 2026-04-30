@@ -2,44 +2,28 @@
  * PID.c
  *
  *  Created on: Apr 29, 2026
- *      Author: jacob h
+ *      Author: jacob.h
  */
 
-typedef struct
-{
-    float p;
-    float i;
-    float d;
-    float target;
-    //float current;
-    float integral;
-    float derivative ;
-    float last_time ;
-}PID_Values;
-
-typedef struct
-{
-	float dt;
-	float now;
-}DT_out;
-
+#include "PID.h"
+#include "main.h"
 float theta; //temp
-
-PID_Values TuringPID;
+extern TIM_HandleTypeDef htim5;
+static PID_Values turningPID;
 void PID_init()
 {
 	
-	 TuringPID = create_PID(10,10,10,10);
+	  create_PID(1,0,0,100,&turningPID);
 }
 
 void update()
 {
-	float wh = PID(theta,TuringPID);
-	move(wh);
+	int wh = PID(theta,turningPID);
+	TIM12Move(wh);
 
 }
 
-void TIM12Move(float amount)
+void TIM12Move(int amount)
 {
 
 	if(amount > 0 ){
@@ -87,15 +71,15 @@ DT_out get_dt(float last_time)
 	return dto;
 }
 
-PID_Values create_PID(float Kp, float Ki, float Kd, float target)
+void create_PID(float Kp, float Ki, float Kd, float target,PID_Values*PIDValues)
 {
-	PID_Values values;
-	values.p = Kp;
-	values.i = Ki;
-	values.d = Kd;
-	values.target = target;
+
+	PIDValues ->p = Kp;
+	PIDValues ->i = Ki;
+	PIDValues ->d = Kd;
+	PIDValues ->target = target;
 }
-float PID(float current, PID_Values values)
+int PID(float current, PID_Values values)
 {
 	DT_out dto = get_dt(values.last_time);
 	float dt = dto.dt;
@@ -109,6 +93,6 @@ float PID(float current, PID_Values values)
 
     prev_error = error;
 
-    float control = values.p * error + values.i * integral + values.d * derivative;
+    int control = values.p * error + values.i * integral + values.d * derivative;
     return control;
 }

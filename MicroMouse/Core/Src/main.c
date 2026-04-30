@@ -27,7 +27,7 @@
 #include "Mapping.h"
 #include "queue.h"
 #include "Structs.h"/* USER CODE END Includes */
-
+#include "PID.h"
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 /* USER CODE END PTD */
@@ -135,6 +135,7 @@ int main(void)
   Sensors_init();
   Mapping_init();
   IO_init();
+  PID_init();
   //Algorithm_init();
   HAL_TIM_Base_Start_IT(&htim6);	// start timer6 to generate interrupt
   HAL_TIM_Encoder_Start(&htim2,TIM_CHANNEL_ALL);	// start the Quadrature encoder (timer 2)
@@ -162,43 +163,8 @@ int main(void)
 //	  float x = Mapping_GetX();
 //	  float y = Mapping_GetY();
 //	  LogPos(x,y);
-//	  add_wall(0,0,1);
-//	  add_wall(0,1,1);
-//	  add_wall(0,2,1);
-//	  add_wall(0,3,0);
-//	  add_wall(0,4,1);
-//
-//	  add_wall(1,3,2);
-//	  add_wall(1,3,1);
-//	  add_wall(1,4,1);
-//
-//	  add_wall(2,0,1);
-//	  add_wall(2,1,0);
-//	  add_wall(2,1,1);
-//	  add_wall(2,2,1);
-//	  add_wall(2,4,1);
-//	  add_wall(2,5,1);
-//
-//	  add_wall(3,1,0);
-//	  add_wall(3,1,1);
-//	  add_wall(3,3,0);
-//	  add_wall(3,4,2);
-//	  add_wall(3,4,0);
-//
-//	  add_wall(4,0,0);
-//	  add_wall(4,2,1);
-//	  add_wall(4,5,1);
-//
-//	  add_wall(5,1,1);
-//	  add_wall(5,2,1);
-//	  add_wall(5,2,0);
-//
-//	  add_wall(6,0,1);
-//	  add_wall(6,1,1);
-//	  add_wall(6,2,1);
-//	  add_wall(6,2,0);
 	  Enc_locate(positionL,positionR);
-	  locateWall();
+	  //locateWall();
 
 /*
 
@@ -210,16 +176,15 @@ int main(void)
 		//uint8_t map[map_w][map_h];
 		int goal[2] = {3,2};
 
-		flood_fill_calc(map, goal);
+		//flood_fill_calc(map, goal);
 
+		//update();
 		Position pos;
 		pos.x = 0;
 		pos.y = 0;
 
-		path = getPath(pos,map);
-
-
-	  HAL_Delay(500);
+		//path = getPath(pos,map);
+		HAL_Delay(500);
   }
   /* USER CODE END 3 */
 }
