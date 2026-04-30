@@ -88,7 +88,7 @@ Queue getPath(Position start, uint8_t map[map_w][map_h])
 
 	while (flood[cx][cy] != 0)   // until goal
 	{
-		uint8_t walls = map[cx][cy];
+		uint8_t current_walls = map[cx][cy];
 
 
 
