@@ -1,6 +1,6 @@
 #ifndef MAPPING_H
 #define MAPPING_H
-#include <Structs.h>
+
 #include "main.h"
 #include "Sensors.h"
 

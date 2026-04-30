@@ -19,11 +19,7 @@ static int var[3];
 static float x = 9;
 static float y = 9;
 static float theta = 0; //static variables for robot pose 
-typedef struct
-{
-    float x;
-    float y;
-}vector;
+
 //create the structure for a vector to store positions
 
 extern uint8_t map[map_w][map_h]; //import map
@@ -154,8 +150,7 @@ vector CalcLength(float theta, vector distance, vector sensPos)
 	target.y = sensPos.y + distance.y;
 
 	vector rotated;
-	rotated.x = vecRotate(target.x, target.y, theta).x;
-	rotated.y = vecRotate(target.x, target.y, theta).y;
+	rotated = vecRotate(target.x, target.y, theta);
 
 	vector result;
 	result.x = x + rotated.x;
