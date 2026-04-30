@@ -28,6 +28,7 @@
 #include "queue.h"
 #include "Structs.h"/* USER CODE END Includes */
 #include "PID.h"
+#include "movement.h"
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 /* USER CODE END PTD */
@@ -186,6 +187,8 @@ int main(void)
 		pos.y = 0;
 
 		//path = getPath(pos,map);
+
+    int nextPath = turn_move(path)
 		HAL_Delay(100);
   }
   /* USER CODE END 3 */
