@@ -87,7 +87,7 @@ static void MX_TIM7_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-
+static int h = 0;
 /* USER CODE END 0 */
 
 /**
@@ -135,7 +135,7 @@ int main(void)
   Sensors_init();
   Mapping_init();
   IO_init();
-  PID_init();
+  //PID_init();
   //Algorithm_init();
   HAL_TIM_Base_Start_IT(&htim6);	// start timer6 to generate interrupt
   HAL_TIM_Encoder_Start(&htim2,TIM_CHANNEL_ALL);	// start the Quadrature encoder (timer 2)
@@ -146,13 +146,15 @@ int main(void)
   HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_3);
   HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);
-  Calabrate();
+  //Calabrate();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
   while (1)
   {
+	  h += 1;
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -163,7 +165,7 @@ int main(void)
 //	  float x = Mapping_GetX();
 //	  float y = Mapping_GetY();
 //	  LogPos(x,y);
-	  Enc_locate(positionL,positionR);
+	  //Enc_locate(positionL,positionR);
 	  //locateWall();
 
 /*
@@ -184,7 +186,7 @@ int main(void)
 		pos.y = 0;
 
 		//path = getPath(pos,map);
-		HAL_Delay(500);
+		HAL_Delay(100);
   }
   /* USER CODE END 3 */
 }

@@ -8,7 +8,7 @@
 #include "PID.h"
 #include "main.h"
 float theta; //temp
-extern TIM_HandleTypeDef htim5;
+
 static PID_Values turningPID;
 void PID_init()
 {
@@ -56,7 +56,7 @@ void turn(float amount)
 
 DT_out get_dt(float last_time)
 {
-	uint32_t now = __HAL_TIM_GET_COUNTER(&htim5);
+	uint32_t now = 0;
 
 	uint32_t delta_us = (now >= last_time)
 						? (now - last_time)
