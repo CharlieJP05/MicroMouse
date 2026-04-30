@@ -78,6 +78,8 @@ Queue getPath(Position start, uint8_t map[map_w][map_h])
 {
 	Queue path;
 	Queue_init(&path);
+	start.x = 0;
+	start.y = 0;
 
 	int cx = start.x;
 	int cy = start.y;
