@@ -6,48 +6,48 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-// remember: add new funcs to h, any inputs are needed there too.
+//include everything needed for mapping.c
 
 #define NORTH 0
 #define EAST 1
 #define SOUTH 2
-#define WEST 3
+#define WEST 3 //define directions as numbers 	NESW
 
 static int prev_L = 0;
-static int prev_R = 0;
+static int prev_R = 0;  
 
 static float x = 9;
 static float y = 9;
-static float theta = 0;
+static float theta = 0; //static variables for robot pose 
 typedef struct
 {
     float x;
     float y;
 }vector;
+//create the structure for a vector to store positions
 
-
-extern uint8_t map[map_w][map_h];
+extern uint8_t map[map_w][map_h]; //import map
 
 vector vectorSensUs  = {0.f, 50.f};
-vector vectorSensIR  = {1.f, 1.f};
+vector vectorSensIR  = {1.f, 1.f};  //set vectors for the us and ir sensors
 
 float wallLength = 16.5;
-float gap = 1.2;
+float gap = 1.2;      //set wall length and gap
 
 
 void Mapping_init()
 {
 
 }
-void add_wall(int mapX, int mapY, int dir){
+void add_wall(int mapX, int mapY, int dir){ //wall adding function
 	int nx = mapX;
-	int ny = mapY;
+	int ny = mapY;    //set variables to hold new x and y 
 
 	int OpDir = dir ^ 2;
 
 	// set wall in current cell
 	map[mapX][mapY] &= ~(0b11 << (dir*2));
-	map[mapX][mapY] |=  (0b11 << (dir*2));
+	map[mapX][mapY] |=  (0b11 << (dir*2)); 
 
 	// move to neighbour (corrected for x,y with north positive)
 	switch(dir)
@@ -69,13 +69,13 @@ void add_wall(int mapX, int mapY, int dir){
 }
 
 
-void convertToMap(){
+void convertToMap(){ //func
 	int mapX = x/map_w;
 	int mapY = y/map_h;
 
 	float localX = fmodf(x, 18.0f);
 	float localY = fmodf(y, 18.0f);
-
+			
 	return;
 
 }
