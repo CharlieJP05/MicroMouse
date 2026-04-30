@@ -34,5 +34,5 @@ float PID(float current, PID_Values* values);
 DT_out get_dt(float last_time);
 void TIM12Move(float amount);
 void TIM8Move(float amount);
-void update(int positionR, int PositionL, float theta);
+int update(int positionR, int PositionL, float theta,vector target,int turnAngle);
 #endif /* INC_PID_H_ */

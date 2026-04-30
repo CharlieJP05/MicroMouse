@@ -16,8 +16,8 @@
 static int prev_L = 0;
 static int prev_R = 0;
 static int var[3];
-static float x = 9;
-static float y = 9;
+float y = 9;
+float x = 9;
 static float theta = 0; //static variables for robot pose 
 
 //create the structure for a vector to store positions
@@ -185,6 +185,12 @@ void locateWall()
 	{
 		add_wall(xDiv, yDiv, EAST);
 	}
+}
+int getX(){
+	return x;
+}
+int getY(){
+	return y;
 }
 
 // possible functions:

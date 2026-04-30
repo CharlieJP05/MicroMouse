@@ -26,9 +26,8 @@
 #include "IO.h"
 #include "Mapping.h"
 #include "queue.h"
-#include "Structs.h"/* USER CODE END Includes */
-#include "PID.h"
-#include "movement.h"
+/* USER CODE END Includes */
+
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 /* USER CODE END PTD */
@@ -146,11 +145,19 @@ int main(void)
   HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);
   //Calabrate();
+  uint8_t map[map_w][map_h];
+
+  Queue turnList;
+  Queue moveList;
+
+  Queue_init(&turnList);
+
+  Queue_init(&moveList);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  uint8_t map[map_w][map_h];
+
   while (1)
   {
 	  h += 1;
@@ -158,8 +165,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-	  //distance = US_Read();
-	  //HAL_Delay(500);
+
 //	  Enc_locate(positionL,positionR);
 //	  float x = Mapping_GetX();
 //	  float y = Mapping_GetY();
@@ -170,15 +176,19 @@ int main(void)
 /*
 	  Queue path;
 	  Queue_init(&path);
-	  append(&path,pos.x,pos.y);
-	  */
+	  append(&path,pos.x,pos.y);*/
+
+	  int goal[2] = {3,2};
+	  flood_fill_calc(map, goal);
+
+	  vector target = {2,2};
+	  int turnAngle = 90;
 
 
-		int goal[2] = {3,2};
+	  int done = update(positionR, positionL, theta,target,turnAngle);
+	  if( done == 1){
 
-		flood_fill_calc(map, goal);
-
-		update(positionR, positionL, theta);
+	  }
 		Position pos;
 		pos.x = 0;
 		pos.y = 0;

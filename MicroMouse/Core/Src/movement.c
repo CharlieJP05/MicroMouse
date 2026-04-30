@@ -7,143 +7,51 @@
 #define SOUTH 2
 #define WEST 3
 
-int heading = 0
-int getDirFromMove(int dx, int dy) {
+int Currentheading = 0;
 
-    if (dx == 0 && dy == 1)  return 0; // N
-    if (dx == 1 && dy == 0)  return 1; // E
-    if (dx == 0 && dy == -1) return 2; // S
-    if (dx == -1 && dy == 0) return 3; // W
 
-    return -1;
+
+int turn_move(Queue path){
+	int NewHeading;
+
+    Position CurrentPos = pop(&path);
+    Position NextPos = peek(&path);
+
+    //This is east
+    if(CurrentPos.x < NextPos.x){
+    	NewHeading = EAST;
+
+    }
+    if(CurrentPos.x > NextPos.x){
+    	NewHeading = WEST;
+
+    }
+    if(CurrentPos.y< NextPos.y){
+    	NewHeading = NORTH;
+
+    }
+    if(CurrentPos.y > NextPos.y){
+    	NewHeading = SOUTH;
+
+    }
+
+    int diff = NewHeading - CurrentHeading;
+
+       // Wrap values to range -3 to 3
+    if(diff > 2){
+           diff -= 4;
+       }
+    if(diff < -2){
+           diff += 4;
+       }
+
+       // Degrees to turn
+    int degrees = diff * 90;
+
+       // Update heading
+    CurrentHeading = NewHeading;
+
+    return degrees;
+
 }
-// Queue getRotations(Queue path, int start_facing) {
 
-//     Queue rotations;
-//     Queue_init(&rotations);
-
-//     if (isEmpty(&path)) return rotations;
-
-//     Position prev = pop(&path);
-//     int facing = start_facing;
-
-//     while (!isEmpty(&path)) {
-
-//         Position next = pop(&path);
-
-//         int dx = next.x - prev.x;
-//         int dy = next.y - prev.y;
-
-//         int target = getDirFromMove(dx, dy);
-
-//         // ignore invalid moves
-//         if (target == -1) {
-//             prev = next;
-//             continue;
-//         }
-
-//         int diff = (target - facing + 4) % 4;
-
-//         int angle = 0;
-
-//         if (diff == 0) {
-//             angle = 0;          // straight
-//         }
-//         else if (diff == 1) {
-//             angle = 90;         // turn right
-//         }
-//         else if (diff == 2) {
-//             angle = 180;        // turn around
-//         }
-//         else if (diff == 3) {
-//             angle = -90;        // turn left
-//         }
-
-//         append(&rotations, angle,0);
-
-//         facing = target;
-//         prev = next;
-//     }
-
-//     return rotations;
-// }
-
-int turn_move(queue path);
-    previous = pop(&path)
-    int next_turn;
-        if (path.y > previous.y){ //North
-            if (heading = 0){//north
-                next_turn = 0
-
-            }
-            if (heading == 1){//east
-                next_turn = 90
-
-            }
-            if (heading == 2){//south
-                next_turn = 180
-
-            }
-            if (heading == 3){//west
-                next_turn = -90
-
-            }
-    }
-
-        if (path.x < previous.x){ //west
-            if (heading = 0){//north
-                next_turn = -90
-
-            }
-            if (heading == 1){//east
-                next_turn = 0
-
-            }
-            if (heading == 2){//south
-                next_turn = 90
-
-            }
-            if (heading == 3){//west
-                next_turn = 180
-
-            }
-    }
-
-        if (path.y < previous.y){ //South
-            if (heading = 0){//north
-                next_turn = 180
-
-            }
-            if (heading == 1){//east
-                next_turn = -90
-
-            }
-            if (heading == 2){//south
-                next_turn = 0
-
-            }
-            if (heading == 3){//west
-                next_turn = 90
-
-            }
-    }
-
-    if (path.x < previous.x){ //west
-            if (heading = 0){//north
-                next_turn = 90
-
-            }
-            if (heading == 1){//east
-                next_turn = 180
-
-            }
-            if (heading == 2){//south
-                next_turn = -90
-
-            }
-            if (heading == 3){//west
-                next_turn = 0
-
-            }
-            return next_turn;
-    }

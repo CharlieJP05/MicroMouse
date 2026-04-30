@@ -7,29 +7,49 @@
 
 #include "PID.h"
 #include "main.h"
+#include "Mapping.h"
 extern TIM_HandleTypeDef htim5;
 static PID_Values movePID;
 static PID_Values turnPID;
+
+
 void PID_init()
 {
 	
-	  create_PID(1,0.001,0.001,1000,&movePID);
+	  create_PID(1,0,0,100,&movePID);
 	  create_PID(1,0,0,3,&turnPID);
 }
-
-void update(int positionR, int positionL, float theta)
+int targetReached = 0 ;
+int update(int positionR, int positionL, float theta,vector target,int turnAngle)
 {
+
+	int x =getX();
+	int y =getY();
+
+
 	float wh = PID(positionR,&movePID);
 	float wh2 = PID(positionL,&movePID);
 	TIM12Move(wh);
 	TIM8Move(wh2);
 
 
+	if(movePID.last_error <= 1){
+		turn(turnAngle);
+		return 1;
+	}
+	return 0;
+
+
+
+
+
 //	float tCON = PID(theta,&turnPID);
 //	TIM12Move(tCON);
 //	TIM8Move(-tCON);
-
 }
+
+
+
 
 void TIM12Move(float amount)
 {
@@ -38,9 +58,14 @@ void TIM12Move(float amount)
 		TIM12->CCR1 = abs((int)amount);
 		TIM12->CCR2 = 0;
 	}
-	if(amount > 0 ){
+	else if(amount > 0 ){
 		TIM12->CCR2 = abs((int)amount);
 		TIM12->CCR1 = 0;
+	}
+	else
+	{
+	    TIM12->CCR1 = 0;
+	    TIM12->CCR2 = 0;
 	}
 
 
@@ -52,11 +77,15 @@ void TIM8Move(float amount)
 		TIM8->CCR3 = abs((int)amount);
 		TIM8->CCR4 = 0;
 	}
-	if(amount < 0 ){
+	else if(amount < 0 ){
 		TIM8->CCR4 = abs((int)amount);
 		TIM8->CCR3 = 0;
 	}
-
+	else
+	{
+	    TIM8->CCR4 = 0;
+	    TIM8->CCR3 = 0;
+	}
 
 }
 
@@ -98,13 +127,15 @@ float PID(float current, PID_Values *values)
 	values -> last_time = dto.now;
     float error = values->target - current;
 
-    float integral = error + values->integral;
-    values -> integral = integral;
+    values->integral += error * dt;
 
     float derivative = (error - values->last_error) / dt;
     values->last_error = error;
 
-    float control = values->p * error + values->i * integral + values->d * derivative;
+    float control =
+        values->p * error +
+        values->i * values->integral +
+        values->d * derivative;
     return control;
     //:---
 }
