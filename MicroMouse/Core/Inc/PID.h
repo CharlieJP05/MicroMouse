@@ -30,8 +30,8 @@ typedef struct
 
 
 void create_PID(float Kp, float Ki, float Kd, float target,PID_Values* PIDValues);
-int PID(float current, PID_Values values);
+float PID(float current, PID_Values values);
 DT_out get_dt(float last_time);
-void TIM12Move(int amount);
+void TIM12Move(float amount);
 void update();
 #endif /* INC_PID_H_ */
