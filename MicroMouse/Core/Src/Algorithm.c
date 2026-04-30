@@ -77,49 +77,45 @@ void flood_fill_calc(uint8_t map[map_w][map_h], int goal[2]){ // calculates the 
 
 Queue getPath(Position start, uint8_t map[map_w][map_h])
 {
-	Queue path;
-	Queue_init(&path);
-	start.x = 0;
-	start.y = 0;
-	int cx = start.x;
-	int cy = start.y;
+    Queue path;
+    Queue_init(&path);
+    int cx = 0;
+    int cy = 0;
 
-	append(&path, cx, cy);
+    append(&path, cx, cy);
 
-	while (flood[cx][cy] != 0)   // until goal
-	{
-		uint8_t current_walls = map[cx][cy];
+    while (flood[cx][cy] != 0)
+    {
+        uint8_t current_walls = map[cx][cy];
+        bool moved = false;
 
+        for (int i = 0; i < 4; i++)
+        {
+            if (!(current_walls & direction[i]))
+            {
+                int *dir = dir_lookup[i];
+                int nx = cx + dir[0];
+                int ny = cy + dir[1];
 
+                if (nx >= 0 && nx < map_w && ny >= 0 && ny < map_h)
+                {
+                    if (flood[nx][ny] >= 0 && flood[cx][cy] > flood[nx][ny])
+                    {
+                        cx = nx;
+                        cy = ny;
+                        append(&path, cx, cy);
+                        moved = true;
+                        break;
+                    }
+                }
+            }
+        }
 
-		for (int i = 0; i < 4; i++)//for every direction
-		{
-			// check wall
-			if (!(current_walls & direction[i])){ //if no wall in direction
+        if (!moved) break; // safety: prevent infinite loop if path is broken
+    }
 
-				int *dir = dir_lookup[i]; // get delta for this dir
-				int nx = cx + dir[0]; // get new positions
-				int ny = cy + dir[1];
-
-				if (nx >= 0 && nx < map_w && ny >= 0 && ny < map_h){
-					if (flood[cx][cy] > flood[nx][ny]){
-						append(&path, nx, ny);
-						cx = nx;
-						cy = ny;
-						break;
-
-
-
-		}
-
-
-	}}
-
-	return path;
+    return path;
 }
-
-	}}
-
 void testing(map){
 	//uint8_t map[map_w][map_h];
 	int goal[2] = {3,2};
