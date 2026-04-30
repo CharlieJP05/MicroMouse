@@ -82,7 +82,7 @@ void biggerOne(){
 }
 
 
-void Enc_locate(int new_L, int new_R)
+float Enc_locate(int new_L, int new_R)
 {
 	int delta_theta_L = new_L - prev_L;
 	int delta_theta_R = new_R - prev_R;
@@ -100,6 +100,7 @@ void Enc_locate(int new_L, int new_R)
 
 	prev_L = new_L;
 	prev_R = new_R;
+	return theta;
 }
 
 float Mapping_GetX(void)

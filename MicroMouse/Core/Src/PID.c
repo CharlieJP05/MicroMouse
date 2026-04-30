@@ -7,31 +7,40 @@
 
 #include "PID.h"
 #include "main.h"
-float theta; //temp
-
-static PID_Values turningPID;
+extern TIM_HandleTypeDef htim5;
+static PID_Values movePID;
+static PID_Values turnPID;
 void PID_init()
 {
 	
-	  create_PID(1,0,0,100,&turningPID);
+	  create_PID(1,0.001,0.001,1000,&movePID);
+	  create_PID(1,0,0,3,&turnPID);
 }
 
-void update()
+void update(int positionR, int positionL, float theta)
 {
-	float wh = PID(theta,turningPID);
+	float wh = PID(positionR,&movePID);
+	float wh2 = PID(positionL,&movePID);
 	TIM12Move(wh);
+	TIM8Move(wh2);
+
+
+//	float tCON = PID(theta,&turnPID);
+//	TIM12Move(tCON);
+//	TIM8Move(-tCON);
 
 }
 
 void TIM12Move(float amount)
 {
 
-	if(amount == 0 ){
-		TIM12->CCR1 = abs(amount);
+	if(amount < 0 ){
+		TIM12->CCR1 = abs((int)amount);
 		TIM12->CCR2 = 0;
 	}
-	if(amount < 0 ){
-		TIM12->CCR2 = abs(amount);
+	if(amount > 0 ){
+		TIM12->CCR2 = abs((int)amount);
+		TIM12->CCR1 = 0;
 	}
 
 
@@ -40,10 +49,12 @@ void TIM8Move(float amount)
 {
 
 	if(amount > 0 ){
-		TIM8->CCR3 = abs(amount);
+		TIM8->CCR3 = abs((int)amount);
+		TIM8->CCR4 = 0;
 	}
 	if(amount < 0 ){
-		TIM8->CCR4 = abs(amount);
+		TIM8->CCR4 = abs((int)amount);
+		TIM8->CCR3 = 0;
 	}
 
 
@@ -57,7 +68,7 @@ void turn(float amount)
 
 DT_out get_dt(float last_time)
 {
-	uint32_t now = 0;
+	uint32_t now = __HAL_TIM_GET_COUNTER(&htim5);
 
 	uint32_t delta_us = (now >= last_time)
 						? (now - last_time)
@@ -80,20 +91,20 @@ void create_PID(float Kp, float Ki, float Kd, float target,PID_Values*PIDValues)
 	PIDValues ->d = Kd;
 	PIDValues ->target = target;
 }
-float PID(float current, PID_Values values)
+float PID(float current, PID_Values *values)
 {
-	DT_out dto = get_dt(values.last_time);
+	DT_out dto = get_dt(values->last_time);
 	float dt = dto.dt;
-	values.last_time = dto.now;
-    float error = values.target - current;
+	values -> last_time = dto.now;
+    float error = values->target - current;
 
-    static float integral = 0;
-    static float prev_error = 0;
+    float integral = error + values->integral;
+    values -> integral = integral;
 
-    float derivative = (error - prev_error) / dt;
+    float derivative = (error - values->last_error) / dt;
+    values->last_error = error;
 
-    prev_error = error;
-
-    float control = values.p * error + values.i * integral + values.d * derivative;
+    float control = values->p * error + values->i * integral + values->d * derivative;
     return control;
+    //:---
 }

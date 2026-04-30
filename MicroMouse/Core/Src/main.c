@@ -62,6 +62,7 @@ UART_HandleTypeDef huart2;
 
 uint8_t map[map_w][map_h];
 static Queue path;
+float theta;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -148,7 +149,7 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-
+  uint8_t map[map_w][map_h];
   while (1)
   {
 	  h += 1;
@@ -162,7 +163,7 @@ int main(void)
 //	  float x = Mapping_GetX();
 //	  float y = Mapping_GetY();
 //	  LogPos(x,y);
-	  Enc_locate(positionL,positionR);
+	  theta = Enc_locate(positionL,positionR);
 	  locateWall();
 
 /*
@@ -171,12 +172,12 @@ int main(void)
 	  append(&path,pos.x,pos.y);
 	  */
 
-		uint8_t map[map_w][map_h];
+
 		int goal[2] = {3,2};
 
 		flood_fill_calc(map, goal);
 
-		update();
+		update(positionR, positionL, theta);
 		Position pos;
 		pos.x = 0;
 		pos.y = 0;
