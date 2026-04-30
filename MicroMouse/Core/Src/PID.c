@@ -4,41 +4,91 @@
  *  Created on: Apr 29, 2026
  *      Author: jacob
  */
-void PID(void)
+
+typedef struct
 {
-		//PID controller (only encoders so far)
-		//starting with simple P
-		float dt = 0.02f; // time between each time step is 20ms
+    float p;
+    float i;
+    float d;
+    float target;
+    //float current;
+    float integral = 0;
+    float derivative = 0;
+    float last_time = 0;
+}PID_Values;
 
-		 // target is not defined as of now as it should come from movement commands
-		float targetL = 100;
-		float targetR = 100;
-		float errorL = targetL - velocityL;
-	 	float errorR = targetR - velocityR;
+typedef struct
+{
+	float dt;
+	float now;
+}DT_out;
 
-		static float integralL = 0;
-		static float integralR = 0;
-		 // adding I
-		float Ki = 0.1f;
 
-		integralL += errorL * 0.02f;
-		integralR += errorR * 0.02f;
-		 // clamp integral to prevent windup
-		if (integralL >  1000.0f) integralL =  1000.0f;
-		if (integralL < -1000.0f) integralL = -1000.0f;
-		if (integralR >  1000.0f) integralR =  1000.0f;
-		if (integralR < -1000.0f) integralR = -1000.0f;
-		 // adding D
-		float Kd = 0.01f;
+void PID_init()
+{
+	turningpid = creat(target)
+}
 
-		static float prev_errorL = 0;
+void update()
+{
+	wh = PID(current,vlaues)
+	MOVE
+	PID()
+}
 
-		float derivativeL = (errorL - prev_errorL) / dt;
-		prev_errorL = errorL;
-		static float prev_errorR = 0;
-		float derivativeR = (errorR - prev_errorR) / dt;
-		prev_errorR = errorR;
-		 // final values
-		controlL = Kp * errorL + Ki * integralL + Kd * derivativeL;
-		controlR = Kp * errorR + Ki * integralR + Kd * derivativeR;
+void move(float amount)
+{
+
+}
+
+void turn(float amount)
+{
+
+}
+
+
+DT_out get_dt(float last_time)
+{
+	uint32_t now = __HAL_TIM_GET_COUNTER(&htim5);
+
+	uint32_t delta_us = (now >= last_time)
+						? (now - last_time)
+						: (0xFFFFFFFF - last_time + now); // handle overflow
+
+	last_time = now;
+
+	float dt = delta_us / 1000000.0f; // convert to seconds
+	DT_out dto;
+	dto.dt = dt;
+	dto.now = now;
+	return dto;
+}
+
+void create_PID(float Kp, float Ki, float Kd, float target)
+{
+	PID_Values values;
+	values.p = Kp;
+	values.i = Ki;
+	values.d = Kd;
+	values.target = target;
+}
+float PID(float current, PID_Values values)
+{
+	DT_out dto = get_dt(values);
+	float dt = dto.dt;
+	values.last_time = dto.now;
+    float error = target - current;
+
+    static float integral = 0;
+
+    integral += errorL * dt;
+
+    static float prev_error = 0;
+
+    float derivative = (error - prev_error) / dt;
+
+    prev_error = error;
+
+    control = Kp * error + Ki * integral + Kd * derivative;
+    return control;
 }
