@@ -26,8 +26,8 @@
 #include "IO.h"
 #include "Mapping.h"
 #include "queue.h"
-#include "Structs.h"/* USER CODE END Includes */
-#include "PID.h"
+/* USER CODE END Includes */
+
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 /* USER CODE END PTD */
@@ -51,7 +51,6 @@ TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim5;
 TIM_HandleTypeDef htim6;
-TIM_HandleTypeDef htim7;
 TIM_HandleTypeDef htim8;
 TIM_HandleTypeDef htim12;
 
@@ -74,12 +73,11 @@ static void MX_ADC1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM6_Init(void);
-static void MX_TIM5_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_TIM8_Init(void);
 static void MX_TIM12_Init(void);
-static void MX_TIM7_Init(void);
+static void MX_TIM5_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -125,18 +123,17 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM6_Init();
-  MX_TIM5_Init();
   MX_I2C1_Init();
   MX_TIM4_Init();
   MX_TIM8_Init();
   MX_TIM12_Init();
-  MX_TIM7_Init();
+  MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
   Sensors_init();
   Mapping_init();
   IO_init();
-  //PID_init();
-  //Algorithm_init();
+  PID_init();
+//  Algorithm_init();
   HAL_TIM_Base_Start_IT(&htim6);	// start timer6 to generate interrupt
   HAL_TIM_Encoder_Start(&htim2,TIM_CHANNEL_ALL);	// start the Quadrature encoder (timer 2)
   HAL_TIM_Encoder_Start(&htim3,TIM_CHANNEL_ALL);	// start the Quadrature encoder (timer 3)
@@ -165,28 +162,27 @@ int main(void)
 //	  float x = Mapping_GetX();
 //	  float y = Mapping_GetY();
 //	  LogPos(x,y);
-	  //Enc_locate(positionL,positionR);
-	  //locateWall();
+	  Enc_locate(positionL,positionR);
+	  locateWall();
 
 /*
-
 	  Queue path;
 	  Queue_init(&path);
 	  append(&path,pos.x,pos.y);
 	  */
 
-		//uint8_t map[map_w][map_h];
+		uint8_t map[map_w][map_h];
 		int goal[2] = {3,2};
 
-		//flood_fill_calc(map, goal);
+		flood_fill_calc(map, goal);
 
-		//update();
+		update();
 		Position pos;
 		pos.x = 0;
 		pos.y = 0;
 
-		//path = getPath(pos,map);
-		HAL_Delay(100);
+		path = getPath(pos,map);
+		HAL_Delay(1);
   }
   /* USER CODE END 3 */
 }
@@ -441,9 +437,9 @@ static void MX_TIM4_Init(void)
 
   /* USER CODE END TIM4_Init 1 */
   htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 84-1;
+  htim4.Init.Prescaler = 0;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 20000-1;
+  htim4.Init.Period = 65535;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
@@ -486,9 +482,9 @@ static void MX_TIM5_Init(void)
 
   /* USER CODE END TIM5_Init 1 */
   htim5.Instance = TIM5;
-  htim5.Init.Prescaler = 84-1;
+  htim5.Init.Prescaler = 0;
   htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim5.Init.Period = 0xFFFFFFFF;
+  htim5.Init.Period = 4294967295;
   htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim5) != HAL_OK)
@@ -551,44 +547,6 @@ static void MX_TIM6_Init(void)
 }
 
 /**
-  * @brief TIM7 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM7_Init(void)
-{
-
-  /* USER CODE BEGIN TIM7_Init 0 */
-
-  /* USER CODE END TIM7_Init 0 */
-
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-
-  /* USER CODE BEGIN TIM7_Init 1 */
-
-  /* USER CODE END TIM7_Init 1 */
-  htim7.Instance = TIM7;
-  htim7.Init.Prescaler = 84-1;
-  htim7.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim7.Init.Period = 20000-1;
-  htim7.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim7) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim7, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM7_Init 2 */
-
-  /* USER CODE END TIM7_Init 2 */
-
-}
-
-/**
   * @brief TIM8 Initialization Function
   * @param None
   * @retval None
@@ -608,7 +566,7 @@ static void MX_TIM8_Init(void)
 
   /* USER CODE END TIM8_Init 1 */
   htim8.Instance = TIM8;
-  htim8.Init.Prescaler = 0;
+  htim8.Init.Prescaler = 84-1;
   htim8.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim8.Init.Period = 1000;
   htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -675,7 +633,7 @@ static void MX_TIM12_Init(void)
 
   /* USER CODE END TIM12_Init 1 */
   htim12.Instance = TIM12;
-  htim12.Init.Prescaler = 0;
+  htim12.Init.Prescaler = 84-1;
   htim12.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim12.Init.Period = 1000;
   htim12.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -820,11 +778,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(SWITCH2_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : US_ECHO_Pin */
-  GPIO_InitStruct.Pin = US_ECHO_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  HAL_GPIO_Init(US_ECHO_GPIO_Port, &GPIO_InitStruct);
+  /*Configure GPIO pin : PA11 */
+  GPIO_InitStruct.Pin = GPIO_PIN_11;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Alternate = GPIO_AF1_TIM1;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : BT_TX_Pin BT_RX_Pin */
   GPIO_InitStruct.Pin = BT_TX_Pin|BT_RX_Pin;

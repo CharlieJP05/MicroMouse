@@ -57,7 +57,7 @@ void Sensors_init(void)
     HAL_TIM_Base_Start(&htim5);
     __HAL_TIM_SET_COUNTER(&htim5, 0);
     // IMU
-    IMU_initialise();   // IMU setup now lives here too
+
 }
 
 float US_Read(void)

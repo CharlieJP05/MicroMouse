@@ -18,16 +18,17 @@ void PID_init()
 
 void update()
 {
-	int wh = PID(theta,turningPID);
+	float wh = PID(theta,turningPID);
 	TIM12Move(wh);
 
 }
 
-void TIM12Move(int amount)
+void TIM12Move(float amount)
 {
 
-	if(amount > 0 ){
+	if(amount == 0 ){
 		TIM12->CCR1 = abs(amount);
+		TIM12->CCR2 = 0;
 	}
 	if(amount < 0 ){
 		TIM12->CCR2 = abs(amount);
@@ -79,7 +80,7 @@ void create_PID(float Kp, float Ki, float Kd, float target,PID_Values*PIDValues)
 	PIDValues ->d = Kd;
 	PIDValues ->target = target;
 }
-int PID(float current, PID_Values values)
+float PID(float current, PID_Values values)
 {
 	DT_out dto = get_dt(values.last_time);
 	float dt = dto.dt;
@@ -93,6 +94,6 @@ int PID(float current, PID_Values values)
 
     prev_error = error;
 
-    int control = values.p * error + values.i * integral + values.d * derivative;
+    float control = values.p * error + values.i * integral + values.d * derivative;
     return control;
 }
