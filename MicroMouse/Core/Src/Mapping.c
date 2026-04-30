@@ -6,48 +6,48 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-// remember: add new funcs to h, any inputs are needed there too.
+//include everything needed for mapping.c
 
 #define NORTH 0
 #define EAST 1
 #define SOUTH 2
-#define WEST 3
+#define WEST 3 //define directions as numbers 	NESW
 
 static int prev_L = 0;
 static int prev_R = 0;
-
-static float x = 0;
-static float y = 0;
-static float theta = 0;
+static int var[3];
+static float x = 9;
+static float y = 9;
+static float theta = 0; //static variables for robot pose 
 typedef struct
 {
     float x;
     float y;
 }vector;
+//create the structure for a vector to store positions
 
+extern uint8_t map[map_w][map_h]; //import map
 
-extern uint8_t map[map_w][map_h];
-
-vector vectorSensUs  = {0.f, 50.f};
+vector vectorSensUs  = {0.f, 5.f};
 vector vectorSensIR  = {1.f, 1.f};
 
 float wallLength = 16.5;
-float gap = 1.2;
+float gap = 1.2;      //set wall length and gap
 
 
 void Mapping_init()
 {
 
 }
-void add_wall(int mapX, int mapY, int dir){
+void add_wall(int mapX, int mapY, int dir){ //wall adding function
 	int nx = mapX;
-	int ny = mapY;
+	int ny = mapY;    //set variables to hold new x and y 
 
 	int OpDir = dir ^ 2;
 
 	// set wall in current cell
 	map[mapX][mapY] &= ~(0b11 << (dir*2));
-	map[mapX][mapY] |=  (0b11 << (dir*2));
+	map[mapX][mapY] |=  (0b11 << (dir*2)); 
 
 	// move to neighbour (corrected for x,y with north positive)
 	switch(dir)
@@ -69,13 +69,13 @@ void add_wall(int mapX, int mapY, int dir){
 }
 
 
-void convertToMap(){
+void convertToMap(){ //func
 	int mapX = x/map_w;
 	int mapY = y/map_h;
 
 	float localX = fmodf(x, 18.0f);
 	float localY = fmodf(y, 18.0f);
-
+			
 	return;
 
 }
@@ -96,8 +96,8 @@ void Enc_locate(int new_L, int new_R)
 	float d = (dL + dR) / 40.0f;
 	float dtheta = ((dR - dL) / 80.0f) * (2.0f * M_PI / 13.0f);
 
-	x += d * cos(theta + dtheta / 2.0f);
-	y += d * sin(theta + dtheta / 2.0f);
+	y += d * cos(theta + dtheta / 2.0f);
+	x += d * sin(theta + dtheta / 2.0f);
 	theta += dtheta;
 
 	LogXY();
@@ -153,7 +153,9 @@ vector CalcLength(float theta, vector distance, vector sensPos)
 	target.x = sensPos.x + distance.x;
 	target.y = sensPos.y + distance.y;
 
-	vector rotated = vecRotate(target.x, target.y, theta);
+	vector rotated;
+	rotated.x = vecRotate(target.x, target.y, theta).x;
+	rotated.y = vecRotate(target.x, target.y, theta).y;
 
 	vector result;
 	result.x = x + rotated.x;
@@ -167,7 +169,11 @@ void locateWall()
 	float distance = US_Read();
 
 	vector dis = {0.f, distance};
-	dis = CalcLength(theta, dis, vectorSensUs);
+	dis.x = CalcLength(theta, dis, vectorSensUs).x;
+	dis.y = CalcLength(theta, dis, vectorSensUs).y;
+	var[0] = dis.x;
+	var[1] = dis.y;
+	var[2] = distance;
 
 	int xDiv = dis.x / 18.f;
 	int yDiv = dis.y / 18.f;
