@@ -15,7 +15,7 @@
 
 static int prev_L = 0;
 static int prev_R = 0;
-
+static int var[3];
 static float x = 9;
 static float y = 9;
 static float theta = 0;
@@ -28,7 +28,7 @@ typedef struct
 
 extern uint8_t map[map_w][map_h];
 
-vector vectorSensUs  = {0.f, 50.f};
+vector vectorSensUs  = {0.f, 5.f};
 vector vectorSensIR  = {1.f, 1.f};
 
 float wallLength = 16.5;
@@ -98,7 +98,7 @@ void Enc_locate(int new_L, int new_R)
 
 	y += d * cos(theta + dtheta / 2.0f);
 	x += d * sin(theta + dtheta / 2.0f);
-	theta -= dtheta;
+	theta += dtheta;
 
 	LogXY();
 
@@ -153,7 +153,9 @@ vector CalcLength(float theta, vector distance, vector sensPos)
 	target.x = sensPos.x + distance.x;
 	target.y = sensPos.y + distance.y;
 
-	vector rotated = vecRotate(target.x, target.y, theta);
+	vector rotated;
+	rotated.x = vecRotate(target.x, target.y, theta).x;
+	rotated.y = vecRotate(target.x, target.y, theta).y;
 
 	vector result;
 	result.x = x + rotated.x;
@@ -167,7 +169,11 @@ void locateWall()
 	float distance = US_Read();
 
 	vector dis = {0.f, distance};
-	dis = CalcLength(theta, dis, vectorSensUs);
+	dis.x = CalcLength(theta, dis, vectorSensUs).x;
+	dis.y = CalcLength(theta, dis, vectorSensUs).y;
+	var[0] = dis.x;
+	var[1] = dis.y;
+	var[2] = distance;
 
 	int xDiv = dis.x / 18.f;
 	int yDiv = dis.y / 18.f;
