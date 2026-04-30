@@ -102,9 +102,8 @@ Queue getPath(Position start, uint8_t map[map_w][map_h])
 					if (flood[cx][cy] > flood[nx][ny]){
 						append(&path, nx, ny);
 						cx = nx;
-						cy = cy;
-					}
-			}
+						cy = ny;
+						break;
 
 
 
@@ -116,7 +115,7 @@ Queue getPath(Position start, uint8_t map[map_w][map_h])
 	return path;
 }
 
-
+	}}
 
 void testing(map){
 	//uint8_t map[map_w][map_h];
@@ -126,4 +125,4 @@ void testing(map){
 }
 
 
-void Calabrate(){}
+void Calabrate(){};
