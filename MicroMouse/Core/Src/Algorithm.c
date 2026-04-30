@@ -74,59 +74,47 @@ void flood_fill_calc(uint8_t map[map_w][map_h], int goal[2]){ // calculates the 
 	
 }
 
+
 Queue getPath(Position start, uint8_t map[map_w][map_h])
 {
 	Queue path;
 	Queue_init(&path);
 	start.x = 0;
 	start.y = 0;
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 	int cx = start.x;
 	int cy = start.y;
-	if (flood[cx][cy] == -1)
-	{
-		return path;
-	}
+
 	append(&path, cx, cy);
 
 	while (flood[cx][cy] != 0)   // until goal
 	{
 		uint8_t walls = map[cx][cy];
 
-		int best_x = cx;
-		int best_y = cy;
-		int best_val = flood[cx][cy];
+
 
 		for (int i = 0; i < 4; i++)
 		{
 			// check wall
 			if (walls & direction[i]) continue;
-
-			int nx = cx + dir_lookup[i][0];
-			int ny = cy + dir_lookup[i][1];
-
-			// bounds check
-			if (nx < 0 || nx >= map_w || ny < 0 || ny >= map_h)
-				continue;
-
-			int val = flood[nx][ny];
-
-			if (val < best_val)
-			{
-				best_val = val;
-				best_x = nx;
-				best_y = ny;
+				int nx = cx + dir_lookup[i][0];
+				int ny = cy + dir_lookup[i][1];
+				if (nx >= 0 && nx < map_w && ny >= 0 && ny < map_h){
+					if (flood[cx][cy] > flood[nx][ny]){
+						append(&path, nx, ny);
+						cx = nx;
+						cy = cy;
+					}
 			}
+
+
+
 		}
 
-		// no progress → stuck
-		if (best_x == cx && best_y == cy)
-			break;
 
-		cx = best_x;
-		cy = best_y;
-
-		append(&path, cx, cy);
 	}
 
 	return path;
