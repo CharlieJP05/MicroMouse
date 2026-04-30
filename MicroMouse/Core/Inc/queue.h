@@ -27,5 +27,5 @@ int isFull(Queue *q);
 // operations
 void append(Queue *q, int x, int y);
 Position pop(Queue *q);
-
+Position peek(Queue *q);
 #endif

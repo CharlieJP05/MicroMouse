@@ -34,8 +34,8 @@ int turn_move(Queue path){
     	NewHeading = SOUTH;
 
     }
-    int CurrentHeading = 0;
-    int diff = NewHeading - CurrentHeading;
+
+    int diff = NewHeading - Currentheading;
 
        // Wrap values to range -3 to 3
     if(diff > 2){
@@ -49,7 +49,7 @@ int turn_move(Queue path){
     int degrees = diff * 90;
 
        // Update heading
-    CurrentHeading = NewHeading;
+    Currentheading = NewHeading;
 
     return degrees;
 
