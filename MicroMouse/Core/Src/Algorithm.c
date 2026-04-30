@@ -53,10 +53,10 @@ void flood_fill_calc(uint8_t map[map_w][map_h], int goal[2]){ // calculates the 
 		for(int i = 0; i < 4; i++){ // for each direction
 
 			if (!(current_walls & direction[i])){ // if no wall
-				int *dir = dir_lookup[i]; // get delta for this dir
 
-				int nx = cx + dir[0]; // get new positions
-				int ny = cy + dir[1];
+
+				int nx = cx + dir_lookup[i][0];
+				int ny = cy + dir_lookup[i][1];
 
 				// bounds check
 				if(nx >= 0 && nx < map_w && ny >= 0 && ny < map_h){
