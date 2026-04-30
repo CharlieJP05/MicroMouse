@@ -12,9 +12,9 @@ typedef struct
     float d;
     float target;
     //float current;
-    float integral = 0;
-    float derivative = 0;
-    float last_time = 0;
+    float integral;
+    float derivative ;
+    float last_time ;
 }PID_Values;
 
 typedef struct
@@ -23,21 +23,44 @@ typedef struct
 	float now;
 }DT_out;
 
+float theta; //temp
 
+PID_Values TuringPID;
 void PID_init()
 {
-	turningpid = creat(target)
+	
+	 TuringPID = create_PID(10,10,10,10);
 }
 
 void update()
 {
-	wh = PID(current,vlaues)
-	MOVE
-	PID()
+	float wh = PID(theta,TuringPID);
+	move(wh);
+
 }
 
-void move(float amount)
+void TIM12Move(float amount)
 {
+
+	if(amount > 0 ){
+		TIM12->CCR1 = abs(amount);
+	}
+	if(amount < 0 ){
+		TIM12->CCR2 = abs(amount);
+	}
+
+
+}
+void TIM8Move(float amount)
+{
+
+	if(amount > 0 ){
+		TIM8->CCR3 = abs(amount);
+	}
+	if(amount < 0 ){
+		TIM8->CCR4 = abs(amount);
+	}
+
 
 }
 
@@ -64,7 +87,7 @@ DT_out get_dt(float last_time)
 	return dto;
 }
 
-void create_PID(float Kp, float Ki, float Kd, float target)
+PID_Values create_PID(float Kp, float Ki, float Kd, float target)
 {
 	PID_Values values;
 	values.p = Kp;
@@ -74,21 +97,18 @@ void create_PID(float Kp, float Ki, float Kd, float target)
 }
 float PID(float current, PID_Values values)
 {
-	DT_out dto = get_dt(values);
+	DT_out dto = get_dt(values.last_time);
 	float dt = dto.dt;
 	values.last_time = dto.now;
-    float error = target - current;
+    float error = values.target - current;
 
     static float integral = 0;
-
-    integral += errorL * dt;
-
     static float prev_error = 0;
 
     float derivative = (error - prev_error) / dt;
 
     prev_error = error;
 
-    control = Kp * error + Ki * integral + Kd * derivative;
+    float control = values.p * error + values.i * integral + values.d * derivative;
     return control;
 }
