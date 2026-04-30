@@ -26,8 +26,9 @@
 #include "IO.h"
 #include "Mapping.h"
 #include "queue.h"
-/* USER CODE END Includes */
-
+#include "Structs.h"/* USER CODE END Includes */
+#include "PID.h"
+#include "movement.h"
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 /* USER CODE END PTD */

@@ -1,12 +1,13 @@
 #include "main.h"
 #include "Structs.h"
 #include "Algorithm.h"
+#include "queue.h"
 #define NORTH 0
 #define EAST 1
 #define SOUTH 2
 #define WEST 3
 
-
+int heading = 0
 int getDirFromMove(int dx, int dy) {
 
     if (dx == 0 && dy == 1)  return 0; // N
@@ -16,61 +17,133 @@ int getDirFromMove(int dx, int dy) {
 
     return -1;
 }
-Queue getRotations(Queue path, int start_facing) {
+// Queue getRotations(Queue path, int start_facing) {
 
-    Queue rotations;
-    Queue_init(&rotations);
+//     Queue rotations;
+//     Queue_init(&rotations);
 
-    if (isEmpty(&path)) return rotations;
+//     if (isEmpty(&path)) return rotations;
 
-    Position prev = pop(&path);
-    int facing = start_facing;
+//     Position prev = pop(&path);
+//     int facing = start_facing;
 
-    while (!isEmpty(&path)) {
+//     while (!isEmpty(&path)) {
 
-        Position next = pop(&path);
+//         Position next = pop(&path);
 
-        int dx = next.x - prev.x;
-        int dy = next.y - prev.y;
+//         int dx = next.x - prev.x;
+//         int dy = next.y - prev.y;
 
-        int target = getDirFromMove(dx, dy);
+//         int target = getDirFromMove(dx, dy);
 
-        // ignore invalid moves
-        if (target == -1) {
-            prev = next;
-            continue;
-        }
+//         // ignore invalid moves
+//         if (target == -1) {
+//             prev = next;
+//             continue;
+//         }
 
-        int diff = (target - facing + 4) % 4;
+//         int diff = (target - facing + 4) % 4;
 
-        int angle = 0;
+//         int angle = 0;
 
-        if (diff == 0) {
-            angle = 0;          // straight
-        }
-        else if (diff == 1) {
-            angle = 90;         // turn right
-        }
-        else if (diff == 2) {
-            angle = 180;        // turn around
-        }
-        else if (diff == 3) {
-            angle = -90;        // turn left
-        }
+//         if (diff == 0) {
+//             angle = 0;          // straight
+//         }
+//         else if (diff == 1) {
+//             angle = 90;         // turn right
+//         }
+//         else if (diff == 2) {
+//             angle = 180;        // turn around
+//         }
+//         else if (diff == 3) {
+//             angle = -90;        // turn left
+//         }
 
-        append(&rotations, angle,0);
+//         append(&rotations, angle,0);
 
-        facing = target;
-        prev = next;
+//         facing = target;
+//         prev = next;
+//     }
+
+//     return rotations;
+// }
+
+int turn_move(queue path);
+    previous = pop(&path)
+    int next_turn;
+        if (path.y > previous.y){ //North
+            if (heading = 0){//north
+                next_turn = 0
+
+            }
+            if (heading == 1){//east
+                next_turn = 90
+
+            }
+            if (heading == 2){//south
+                next_turn = 180
+
+            }
+            if (heading == 3){//west
+                next_turn = -90
+
+            }
     }
 
-    return rotations;
-}
+        if (path.x < previous.x){ //west
+            if (heading = 0){//north
+                next_turn = -90
 
-void spin(int degree){
-    //turn by angle 
-}
+            }
+            if (heading == 1){//east
+                next_turn = 0
 
-void move(){
-    
-}
+            }
+            if (heading == 2){//south
+                next_turn = 90
+
+            }
+            if (heading == 3){//west
+                next_turn = 180
+
+            }
+    }
+
+        if (path.y < previous.y){ //South
+            if (heading = 0){//north
+                next_turn = 180
+
+            }
+            if (heading == 1){//east
+                next_turn = -90
+
+            }
+            if (heading == 2){//south
+                next_turn = 0
+
+            }
+            if (heading == 3){//west
+                next_turn = 90
+
+            }
+    }
+
+    if (path.x < previous.x){ //west
+            if (heading = 0){//north
+                next_turn = 90
+
+            }
+            if (heading == 1){//east
+                next_turn = 180
+
+            }
+            if (heading == 2){//south
+                next_turn = -90
+
+            }
+            if (heading == 3){//west
+                next_turn = 0
+
+            }
+            return next_turn;
+    }
