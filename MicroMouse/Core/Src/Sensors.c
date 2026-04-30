@@ -7,8 +7,8 @@
 */
 
 extern TIM_HandleTypeDef htim5;
-extern TIM_HandleTypeDef  htim4;
-extern I2C_HandleTypeDef  hi2c1;
+extern TIM_HandleTypeDef htim4;
+extern I2C_HandleTypeDef hi2c1;
 extern UART_HandleTypeDef huart2;
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim3;
@@ -175,14 +175,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     }
 	if(htim == &htim6)
 	{
-	    if (startup_count < 10) {
-	        startup_count++;
-	        TIM8->CCR3 = 0;
-	        TIM8->CCR4 = 0;
-	        TIM12->CCR1 = 0;
-	        TIM12->CCR2 = 0;
-	        return;
-	    }
+
 
 	    // Right motor - read CNT directly, cast handles wraparound
 	    int32_t cntR = -(int16_t)htim2.Instance->CNT;

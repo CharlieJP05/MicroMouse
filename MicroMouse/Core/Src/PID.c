@@ -8,7 +8,7 @@
 #include "PID.h"
 #include "main.h"
 #include "Mapping.h"
-extern TIM_HandleTypeDef htim5;
+extern TIM_HandleTypeDef htim7;
 static PID_Values movePID;
 static PID_Values turnPID;
 extern float theta;
@@ -16,21 +16,31 @@ extern float theta;
 void PID_init()
 {
 	
-	  create_PID(1,0,0,0,&movePID);
+	  create_PID(50,0,0,0,&movePID);
 	  create_PID(1,0,0,0,&turnPID);
 }
 int targetReached = 0 ;
+
+int CMToCounts(float distance)
+{
+    const float WHEEL  = 42.0f;
+    const float RESOULTION   = 2000.0f;
+
+    float distancemm      = distance * 10.0f;
+    float wheel = 2.0f * 3.14 * RESOULTION;   // ~263.89 mm
+    float revolutions      = distancemm / WHEEL;
+    int32_t counts         = (int32_t)(revolutions * RESOULTION);
+
+    return counts;
+}
 int update(int positionR, int positionL, float theta,vector target,int turnAngle)
 {
 
-	int x =getX();
-	int y =getY();
 
 
-	float wh = PID(positionR,&movePID);
-	float wh2 = PID(positionL,&movePID);
+	float wh = PID(getY(),&movePID);
 	TIM12Move(wh);
-	TIM8Move(wh2);
+	TIM8Move(wh);
 
 
 	if(movePID.last_error <= 1){
@@ -38,8 +48,12 @@ int update(int positionR, int positionL, float theta,vector target,int turnAngle
 		return 1;
 	}
 	return 0;
+}
 
+void SetTarget(int target){
+	movePID.target += target;
 
+}
 void turn(int angle)
 {
 	while (1){
@@ -57,7 +71,7 @@ void turn(int angle)
 //	float tCON = PID(theta,&turnPID);
 //	TIM12Move(tCON);
 //	TIM8Move(-tCON);
-}
+
 
 
 
@@ -100,15 +114,11 @@ void TIM8Move(float amount)
 
 }
 
-void turn(float amount)
-{
-
-}
 
 
 DT_out get_dt(float last_time)
 {
-	uint32_t now = __HAL_TIM_GET_COUNTER(&htim5);
+	uint32_t now = __HAL_TIM_GET_COUNTER(&htim7);
 
 	uint32_t delta_us = (now >= last_time)
 						? (now - last_time)

@@ -26,6 +26,7 @@
 #include "IO.h"
 #include "Mapping.h"
 #include "queue.h"
+#include "PID.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -51,6 +52,7 @@ TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim5;
 TIM_HandleTypeDef htim6;
+TIM_HandleTypeDef htim7;
 TIM_HandleTypeDef htim8;
 TIM_HandleTypeDef htim12;
 
@@ -79,6 +81,7 @@ static void MX_TIM4_Init(void);
 static void MX_TIM8_Init(void);
 static void MX_TIM12_Init(void);
 static void MX_TIM5_Init(void);
+static void MX_TIM7_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -87,6 +90,7 @@ static void MX_TIM5_Init(void);
 /* USER CODE BEGIN 0 */
 
 static int h = 0;
+static float temp = 0;
 /* USER CODE END 0 */
 
 /**
@@ -129,6 +133,7 @@ int main(void)
   MX_TIM8_Init();
   MX_TIM12_Init();
   MX_TIM5_Init();
+  MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
   Sensors_init();
   Mapping_init();
@@ -144,16 +149,21 @@ int main(void)
   HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_3);
   HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);
-  //Calabrate();
-  uint8_t map[map_w][map_h];
-  int goal[2] = {3,2};
 
+  HAL_TIM_Base_Start(&htim5);
+
+  HAL_TIM_Base_Start(&htim7);
+  //Calabrate();
+
+  int goal[2] = {3,2};
+  vector target = {2,2};
   Queue turnList;
   Queue moveList;
 
   Queue_init(&turnList);
 
   Queue_init(&moveList);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -173,10 +183,11 @@ int main(void)
 	  theta = Enc_locate(positionL,positionR);
 	  locateWall();
 	  flood_fill_calc(map, goal);
-	  vector target = {2,2};
+
 	  int turnAngle = 90;
-	  turn(90);
-	  //int done = update(positionR, positionL, theta,target,turnAngle);
+	  //turn(90);
+	  temp = CMToCounts(target.x - getX()/18 + target.y-getY()/18);
+	  int done = update(positionL, positionR, theta,target,turnAngle);
 	  //if( done == 1){
 
 	  //}
@@ -185,7 +196,13 @@ int main(void)
 		pos.y = 0;
 
 		path = getPath(pos,map);
-		HAL_Delay(1);
+
+		h++;
+		if(h >=3000){
+			SetTarget(18);
+			h = 0 ;
+		}
+		//HAL_Delay(1);
   }
   /* USER CODE END 3 */
 }
@@ -550,6 +567,44 @@ static void MX_TIM6_Init(void)
 }
 
 /**
+  * @brief TIM7 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM7_Init(void)
+{
+
+  /* USER CODE BEGIN TIM7_Init 0 */
+
+  /* USER CODE END TIM7_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM7_Init 1 */
+
+  /* USER CODE END TIM7_Init 1 */
+  htim7.Instance = TIM7;
+  htim7.Init.Prescaler = 0;
+  htim7.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim7.Init.Period = 65535;
+  htim7.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim7) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim7, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM7_Init 2 */
+
+  /* USER CODE END TIM7_Init 2 */
+
+}
+
+/**
   * @brief TIM8 Initialization Function
   * @param None
   * @retval None
@@ -740,11 +795,11 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(IR3_OUT_GPIO_Port, IR3_OUT_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : B1_Pin */
-  GPIO_InitStruct.Pin = B1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  /*Configure GPIO pins : B1_Pin SWITCH1_Pin */
+  GPIO_InitStruct.Pin = B1_Pin|SWITCH1_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : IR4_OUT_Pin BT_MODE_Pin LED4_Pin US_TRIG_Pin */
   GPIO_InitStruct.Pin = IR4_OUT_Pin|BT_MODE_Pin|LED4_Pin|US_TRIG_Pin;
@@ -768,12 +823,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(IR3_OUT_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : SWITCH1_Pin */
-  GPIO_InitStruct.Pin = SWITCH1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(SWITCH1_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : SWITCH2_Pin */
   GPIO_InitStruct.Pin = SWITCH2_Pin;

@@ -74,7 +74,8 @@ void flood_fill_calc(uint8_t map[map_w][map_h], int goal[2]){ // calculates the 
 	
 }
 
-
+int GoalFound = 0;
+int GoalReached = 0;
 Queue getPath(Position start, uint8_t map[map_w][map_h])
 {
     Queue path;
@@ -84,44 +85,48 @@ Queue getPath(Position start, uint8_t map[map_w][map_h])
 
     append(&path, cx, cy);
 
-    while (flood[cx][cy] != 0)
-    {
-        uint8_t current_walls = map[cx][cy];
-        bool moved = false;
+		while (flood[cx][cy] != 0)
+		{
+			uint8_t current_walls = map[cx][cy];
+			bool moved = false;
 
-        for (int i = 0; i < 4; i++)
-        {
-            if (!(current_walls & direction[i]))
-            {
-                int *dir = dir_lookup[i];
-                int nx = cx + dir[0];
-                int ny = cy + dir[1];
+			for (int i = 0; i < 4; i++)
+			{
+				if (!(current_walls & direction[i]))
+				{
+					int *dir = dir_lookup[i];
+					int nx = cx + dir[0];
+					int ny = cy + dir[1];
 
-                if (nx >= 0 && nx < map_w && ny >= 0 && ny < map_h)
-                {
-                    if (flood[nx][ny] >= 0 && flood[cx][cy] > flood[nx][ny])
-                    {
-                        cx = nx;
-                        cy = ny;
-                        append(&path, cx, cy);
-                        moved = true;
-                        break;
-                    }
-                }
-            }
+					if (nx >= 0 && nx < map_w && ny >= 0 && ny < map_h)
+					{
+						if (flood[nx][ny] >= 0 && flood[cx][cy] > flood[nx][ny])
+						{
+							cx = nx;
+							cy = ny;
+							foundGoal(cx,cy);
+							append(&path, cx, cy);
+							moved = true;
+							break;
+						}
+					}
+				}
+			}
+			if (!moved) break;
+
         }
 
-        if (!moved) break;
-    }
+		 if (flood[cx][cy] == 0)
+		 	 {
+
+			 append(&path, cx, cy);
+		     }
+
+		     return path;
+		}
 
     // append goal cell (flood == 0) explicitly
-    if (flood[cx][cy] == 0)
-    {
-        append(&path, cx, cy);
-    }
 
-    return path;
-}
 void testing(map){
 	//uint8_t map[map_w][map_h];
 	int goal[2] = {3,2};
@@ -129,5 +134,21 @@ void testing(map){
 	flood_fill_calc(map, goal);
 }
 
+void atGoal(){
+
+	int x = getX();
+	int y = getY();
+	if((x == 3 && y == 2)||(x == 4 && y == 2)||(x == 3 && y == 3)||(x == 4 && y == 3)){
+		GoalReached = 1;
+	}
+}
+
+void foundGoal(int cx,int cy){
+
+
+	if((cx == 3 && cy == 2)||(cx == 4 && cy == 2)||(cx == 3 && cy == 3)||(cx == 4 && cy == 3)){
+		GoalFound = 1;
+	}
+}
 
 void Calabrate(){};

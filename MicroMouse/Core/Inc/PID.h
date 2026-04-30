@@ -35,4 +35,6 @@ DT_out get_dt(float last_time);
 void TIM12Move(float amount);
 void TIM8Move(float amount);
 int update(int positionR, int PositionL, float theta,vector target,int turnAngle);
+void SetTarget(int target);
+void turn(int angle);
 #endif /* INC_PID_H_ */

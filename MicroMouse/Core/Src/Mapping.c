@@ -85,6 +85,7 @@ void biggerOne(){
 float Enc_locate(int new_L, int new_R)
 {
 	int delta_theta_L = new_L - prev_L;
+	//int delta_theta_R = new_L - prev_L;
 	int delta_theta_R = new_R - prev_R;
 
 	float dL = 42.0f * ((float)delta_theta_L / 2000.0f) * 2.0f * M_PI;
