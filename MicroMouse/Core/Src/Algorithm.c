@@ -79,8 +79,8 @@ Queue getPath(Position start, uint8_t map[map_w][map_h])
 {
     Queue path;
     Queue_init(&path);
-    int cx = 0;
-    int cy = 0;
+    int cx = start.x;
+    int cy = start.y;
 
     append(&path, cx, cy);
 
@@ -111,7 +111,13 @@ Queue getPath(Position start, uint8_t map[map_w][map_h])
             }
         }
 
-        if (!moved) break; // safety: prevent infinite loop if path is broken
+        if (!moved) break;
+    }
+
+    // append goal cell (flood == 0) explicitly
+    if (flood[cx][cy] == 0)
+    {
+        append(&path, cx, cy);
     }
 
     return path;

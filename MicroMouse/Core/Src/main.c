@@ -145,7 +145,7 @@ int main(void)
   HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);
   //Calabrate();
-  uint8_t map[map_w][map_h];
+
 
   Queue turnList;
   Queue moveList;
