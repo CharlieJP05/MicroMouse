@@ -10,4 +10,7 @@ float Mapping_GetX(void);
 float Mapping_GetY(void);
 void LogXY(void);
 void add_wall(int mapX, int mapY, int dir);
+vector CalcLength(float theta, vector distance, vector sensPos);
+vector vecRotate(float x, float y, float theta);
+void locateWall();
 #endif // MAPPING_H
