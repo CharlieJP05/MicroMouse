@@ -16,8 +16,8 @@
 static int prev_L = 0;
 static int prev_R = 0;
 
-static float x = 0;
-static float y = 0;
+static float x = 9;
+static float y = 9;
 static float theta = 0;
 typedef struct
 {
@@ -96,9 +96,9 @@ void Enc_locate(int new_L, int new_R)
 	float d = (dL + dR) / 40.0f;
 	float dtheta = ((dR - dL) / 80.0f) * (2.0f * M_PI / 13.0f);
 
-	x += d * cos(theta + dtheta / 2.0f);
-	y += d * sin(theta + dtheta / 2.0f);
-	theta += dtheta;
+	y += d * cos(theta + dtheta / 2.0f);
+	x += d * sin(theta + dtheta / 2.0f);
+	theta -= dtheta;
 
 	LogXY();
 

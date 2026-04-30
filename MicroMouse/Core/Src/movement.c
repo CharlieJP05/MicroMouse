@@ -58,7 +58,7 @@ Queue getRotations(Queue path, int start_facing) {
             angle = -90;        // turn left
         }
 
-        append(&rotations, angle);
+        append(&rotations, angle,0);
 
         facing = target;
         prev = next;
