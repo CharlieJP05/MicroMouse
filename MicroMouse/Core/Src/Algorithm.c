@@ -81,10 +81,6 @@ Queue getPath(Position start, uint8_t map[map_w][map_h])
 	Queue_init(&path);
 	start.x = 0;
 	start.y = 0;
-<<<<<<< Updated upstream
-
-=======
->>>>>>> Stashed changes
 	int cx = start.x;
 	int cy = start.y;
 
