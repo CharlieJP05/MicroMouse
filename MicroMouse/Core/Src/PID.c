@@ -11,13 +11,15 @@
 extern TIM_HandleTypeDef htim7;
 static PID_Values movePID;
 static PID_Values turnPID;
+static PID_Values balancePID;
 extern float theta;
 
 void PID_init()
 {
-	
-	  create_PID(50,0,0,0,&movePID);
+
+	  create_PID(5,0,0,10,&movePID);
 	  create_PID(1,0,0,0,&turnPID);
+	  create_PID(5,0,0,9,&balancePID);
 }
 int targetReached = 0 ;
 
@@ -39,12 +41,14 @@ int update(int positionR, int positionL, float theta,vector target,int turnAngle
 
 
 	float wh = PID(getY(),&movePID);
-	TIM12Move(wh);
-	TIM8Move(wh);
+	float hw = PID(getX(),&balancePID);
+	TIM12Move(wh+hw);
+	TIM8Move(wh+hw);
 
 
-	if(movePID.last_error <= 1){
+	if(reachedTarget() == 1){
 		turn(turnAngle);
+
 		return 1;
 	}
 	return 0;
@@ -54,7 +58,14 @@ void SetTarget(int target){
 	movePID.target += target;
 
 }
-void turn(int angle)
+
+void reachedTarget(){
+	if(abs(movePID.last_error)<= 30){
+		return 1;
+	}
+	return 0;
+}
+int turn(int angle)
 {
 	while (1){
 		float t = PID(theta,&turnPID);
@@ -160,3 +171,4 @@ float PID(float current, PID_Values *values)
     return control;
     //:---
 }
+

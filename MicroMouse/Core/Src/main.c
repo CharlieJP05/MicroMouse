@@ -106,8 +106,7 @@ int main(void)
 
   /* MCU Configuration--------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */  HAL_Init();
 
   /* USER CODE BEGIN Init */
 
@@ -186,11 +185,11 @@ int main(void)
 
 	  int turnAngle = 90;
 	  //turn(90);
-	  temp = CMToCounts(target.x - getX()/18 + target.y-getY()/18);
-	  int done = update(positionL, positionR, theta,target,turnAngle);
-	  //if( done == 1){
 
-	  //}
+	  int done = update(positionL, positionR, theta,target,turnAngle);
+	  if( done == 1){
+
+	  }
 		Position pos;
 		pos.x = 0;
 		pos.y = 0;
@@ -199,7 +198,7 @@ int main(void)
 
 		h++;
 		if(h >=3000){
-			SetTarget(18);
+			SetTarget(180);
 			h = 0 ;
 		}
 		//HAL_Delay(1);
