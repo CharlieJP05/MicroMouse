@@ -1,0 +1,71 @@
+MicroMouse Project - High-Level Overview
+=========================================
+
+WHAT IS A MICROMOUSE?
+---------------------
+A Micromouse is a small, autonomous robot that navigates and solves a maze
+without any human intervention. Competitions follow a standard where the maze
+is a 16x16 grid of cells (each cell is 180mm x 180mm), and the robot must
+find the shortest path from the start corner to the centre of the maze.
+
+The robot must:
+  1. Explore the maze, detecting walls with its sensors.
+  2. Build an internal map of the maze.
+  3. Compute the shortest path to the goal using a search algorithm.
+  4. Drive that path as fast as possible on subsequent runs.
+
+THIS PROJECT
+------------
+Hardware platform: STM32F446RETx (NUCLEO-F446RE) running at 84 MHz.
+
+Sensors fitted:
+  - 1 x HC-SR04 ultrasonic (US) sensor (forward distance)
+  - 4 x IR emitter/receiver pairs (wall detection on three sides)
+  - 1 x IMU (inertial measurement unit) via I2C (heading / turn angle)
+
+Actuators:
+  - 2 x DC motors with quadrature encoders (differential drive)
+  - Motor driver outputs controlled via PWM timers
+
+Ancillary:
+  - 4 x status LEDs
+  - 2 x user push-buttons / switches
+  - 1 x Blue push-button (on-board)
+  - Bluetooth UART (HC-05 or similar) for wireless debug output
+
+STEP-BY-STEP DEVELOPMENT PLAN
+------------------------------
+Phase 1 - Hardware bring-up
+  a) Verify power rails and clock configuration (84 MHz from HSI PLL).
+  b) Test USART2 loopback (PA2/PA3) at 115200 baud for debug printf.
+  c) Blink LED1 (PB10) to confirm GPIO and SysTick work correctly.
+  d) Test each motor forward/reverse with PWM duty cycle sweep.
+  e) Read encoder counts from TIM2 (motor 1) and TIM3 (motor 2).
+
+Phase 2 - Sensor drivers
+  a) US sensor: generate 10us trigger pulse on PA12, capture echo on
+     PA11 (TIM1_CH4 input capture), convert time to millimetres.
+  b) IR sensors: enable emitter (IR1_OUT..IR4_OUT), read ADC channels
+     (ADC_IR1..ADC_IR4), disable emitter. Convert ADC value to distance.
+  c) IMU: initialise device over I2C1 (PB8 SCL, PB9 SDA), read gyro Z
+     axis to integrate heading, read accelerometer for tilt compensation.
+
+Phase 3 - Low-level motion control
+  a) PID speed controller for each motor using encoder feedback.
+  b) Straight-line controller: keep both motors at equal speed while
+     maintaining heading using IMU gyro yaw.
+  c) Turn controller: rotate by a fixed angle (90 or 180 degrees) using
+     IMU integration, then stop.
+
+Phase 4 - Maze solver
+  a) Represent the maze as a 16x16 array of wall flags (N/E/S/W per cell).
+  b) Update wall flags from sensor readings on every cell entry.
+  c) Run flood-fill to compute the shortest distance from every cell to
+     the goal and choose the next move direction.
+  d) On subsequent speed runs, use the known map to drive at maximum speed.
+
+Phase 5 - Competition tuning
+  a) Calibrate IR and US sensors for the specific maze surface/lighting.
+  b) Tune PID gains for smooth, fast straight-line travel and sharp turns.
+  c) Optimise flood-fill to handle diagonal moves if rules permit.
+  d) Add battery voltage monitoring and low-battery warning via LEDs.

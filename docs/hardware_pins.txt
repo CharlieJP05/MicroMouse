@@ -1,0 +1,139 @@
+MicroMouse - Hardware Pin Mapping (STM32F446RETx / NUCLEO-F446RE)
+=================================================================
+
+All information is derived from MicroMouse.ioc (STM32CubeMX project).
+MCU: STM32F446RET6, LQFP-64 package, 84 MHz system clock (HSI PLL).
+
+-----------------------------------------------------------------------
+ULTRASONIC SENSOR (HC-SR04)
+-----------------------------------------------------------------------
+Signal      Pin   Mode              Timer / Alt Function
+---------   ----  ----------------  --------------------------------
+US_TRIG     PA12  GPIO_Output       Active-high trigger pulse (>= 10 us)
+US_ECHO     PA11  TIM1_CH4 (AF1)    Input capture - measures echo width
+
+Operation:
+  1. Set US_TRIG HIGH for at least 10 microseconds, then LOW.
+  2. TIM1 Channel 4 captures the rising edge (start) and falling edge
+     (end) of the ECHO pulse.
+  3. Distance (mm) = echo_pulse_width_us * 10 / 58
+     (speed of sound ~343 m/s => 1 us ~ 0.1715 mm one-way;
+      integer approximation: multiply by 10 then divide by 58)
+  4. Practical range: 20 mm to 4000 mm; update rate ~20 Hz recommended.
+
+-----------------------------------------------------------------------
+INFRARED SENSORS (4 pairs, emitter + receiver)
+-----------------------------------------------------------------------
+Each IR pair has an emitter enable output and an ADC analog input.
+Emitters should be driven one at a time to avoid cross-talk.
+
+Sensor   Emitter Out  ADC In   ADC Channel  Suggested Position
+------   -----------  -------  -----------  --------------------
+IR1      PB12         PA4      ADC1_IN4     Front-left diagonal
+IR2      PB13         PB0      ADC1_IN8     Front-right diagonal
+IR3      PC6          PC0      ADC1_IN10    Left side
+IR4      PA5          PC1      ADC1_IN11    Right side
+
+ADC configuration (from IOC):
+  - ADC1, 12-bit resolution, right-aligned
+  - Software triggered, single conversion mode
+  - Sample time: 3 cycles (can be increased for better accuracy)
+
+IR reading sequence:
+  1. Set IRx_OUT HIGH  (activate emitter)
+  2. Wait ~50 us for emitter to stabilise
+  3. Set ADC channel to the corresponding ADC_IRx input
+  4. Start ADC conversion and wait for EOC
+  5. Read 12-bit ADC value (0-4095; higher = closer wall)
+  6. Set IRx_OUT LOW   (deactivate emitter)
+  7. Optionally read ambient ADC value (emitter OFF) and subtract to
+     remove ambient light interference.
+
+Typical calibration:
+  - Open space (no wall): ~200 ADC counts
+  - Wall at 20 mm:        ~3500 ADC counts
+  - Apply exponential or look-up-table (LUT) conversion to millimetres.
+
+-----------------------------------------------------------------------
+IMU (Inertial Measurement Unit)  - I2C1
+-----------------------------------------------------------------------
+Signal      Pin   Mode           Notes
+---------   ----  -------------  ------------------------------------
+IMU_SCL     PB8   I2C1_SCL (AF4) Open-drain, requires pull-up resistor
+IMU_SDA     PB9   I2C1_SDA (AF4) Open-drain, requires pull-up resistor
+
+Recommended IMU chips: MPU-6050 (6-DOF), ICM-20600, or LSM6DSO.
+  - I2C address: 0x68 (MPU-6050 with AD0 LOW) or 0x69 (AD0 HIGH)
+  - Initialisation: set sample rate, configure gyro (+/-500 dps range
+    recommended for maze turns), configure accelerometer (+/-2g).
+  - Read 6-byte raw data burst (AX, AY, AZ, GX, GY, GZ) each control
+    cycle and integrate GZ for heading.
+
+-----------------------------------------------------------------------
+MOTOR DRIVE
+-----------------------------------------------------------------------
+Motor 1 (left):
+  Signal     Pin   Timer       Notes
+  ---------  ----  ----------  ------------------------------------
+  M1PWM_A    PB15  TIM12_CH2   Forward / reverse PWM channel A
+  M1PWM_B    PB14  TIM12_CH1   Forward / reverse PWM channel B
+  M1ENC_A    PA0   TIM2_CH1    Quadrature encoder channel A
+  M1ENC_B    PA1   TIM2_CH2    Quadrature encoder channel B
+  M1_SENSE   PC4   ADC1_IN14   Motor current sense (analog)
+
+Motor 2 (right):
+  Signal     Pin   Timer       Notes
+  ---------  ----  ----------  ------------------------------------
+  M2PWM_A    PC8   TIM8_CH3    Forward / reverse PWM channel A
+  M2PWM_B    PC9   TIM8_CH4    Forward / reverse PWM channel B
+  M2ENC_A    PA6   TIM3_CH1    Quadrature encoder channel A
+  M2ENC_B    PA7   TIM3_CH2    Quadrature encoder channel B
+  M2_SENSE   PC5   ADC1_IN15   Motor current sense (analog)
+
+PWM generation:
+  - TIM12 at ~20 kHz (above audible range) for Motor 1.
+  - TIM8  at ~20 kHz for Motor 2.
+  - Direction controlled by complementary duty cycles on CHx_A / CHx_B
+    (or by an external H-bridge direction pin if used).
+
+Encoder configuration:
+  - TIM2 and TIM3 in encoder mode (both channels, 4x resolution).
+  - 16-bit counter; read difference each control cycle for speed.
+
+-----------------------------------------------------------------------
+STATUS LEDs
+-----------------------------------------------------------------------
+Label   Pin   Active Level  Suggested Use
+------  ----  ------------  ----------------------------------------
+LED1    PB10  HIGH          Power / system OK indicator
+LED2    PB4   HIGH          Maze solving active
+LED3    PB5   HIGH          Error / battery low
+LED4    PA10  HIGH          Bluetooth connected
+
+-----------------------------------------------------------------------
+USER INPUTS
+-----------------------------------------------------------------------
+Label         Pin   Mode             Notes
+-----------   ----  ---------------  --------------------------------
+B1 (Blue)     PC13  EXTI falling     On-board user button, active LOW
+SWITCH1       PC7   GPIO_Input       Start/stop run
+SWITCH2       PA9   GPIO_Input       Mode select
+
+-----------------------------------------------------------------------
+COMMUNICATION
+-----------------------------------------------------------------------
+Interface  Pins        Peripheral  Baud      Use
+---------  ----------  ----------  --------  --------------------------
+Debug      PA2/PA3     USART2      115200    ST-Link VCP / printf
+Bluetooth  PC10/PC11   UART4       9600      HC-05 wireless debug
+BT_MODE    PA8         GPIO_Out    -         HC-05 AT-command mode
+BT_STATE   PB6         GPIO_In     -         HC-05 connected indicator
+
+-----------------------------------------------------------------------
+DEBUG / PROGRAMMING
+-----------------------------------------------------------------------
+Signal  Pin   Function
+------  ----  --------
+TMS     PA13  SWD data (SWDIO)
+TCK     PA14  SWD clock (SWCLK)
+SWO     PB3   Serial Wire Output (ITM trace)
